@@ -102,14 +102,8 @@ function ProfileKV({ applicant, t, lang }) {
 // ============================================================
 // ADMIN DASHBOARD
 // ============================================================
-function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
-  const myGuild =
-    role === "rad_r5" || role === "rad_r4" ? "rad"
-    : role === "mtlh_r5" || role === "mtlh_r4" ? "mtlh"
-    : null;
-
+function AdminDashboard({ t, lang, role, currentUserId, forceGuild }) {
   const [applicants, setApplicants] = _ps([]);
-  const [guildFilter, setGuildFilter] = _ps(myGuild || "rad");
   const [tab, setTab] = _ps("pending");
   const [selectedId, setSelectedId] = _ps(null);
   const [mobileView, setMobileView] = _ps("list");
@@ -139,21 +133,14 @@ function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
     return () => { window.supabaseClient.removeChannel(channel); };
   }, []);
 
-  const visibleAll = _pm(() => {
-    if (isSuper) return applicants;
-    return applicants.filter(a => a.guild === myGuild);
-  }, [applicants, myGuild, isSuper]);
-
   const filtered = _pm(() => {
-    const g = isSuper ? guildFilter : myGuild;
-    return visibleAll
-      .filter(a => a.guild === g)
+    return applicants
+      .filter(a => a.guild === forceGuild)
       .filter(a => tab === "all" ? true : a.status === tab);
-  }, [visibleAll, guildFilter, tab, myGuild, isSuper]);
+  }, [applicants, forceGuild, tab]);
 
   const counts = _pm(() => {
-    const g = isSuper ? guildFilter : myGuild;
-    const subset = visibleAll.filter(a => a.guild === g);
+    const subset = applicants.filter(a => a.guild === forceGuild);
     return {
       pending: subset.filter(a => a.status === "pending").length,
       review: subset.filter(a => a.status === "review").length,
@@ -161,7 +148,7 @@ function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
       rejected: subset.filter(a => a.status === "rejected").length,
       all: subset.length,
     };
-  }, [visibleAll, guildFilter, myGuild, isSuper]);
+  }, [applicants, forceGuild]);
 
   _pe(() => {
     if (filtered.length === 0) { setSelectedId(null); return; }
@@ -183,12 +170,9 @@ function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
           <div style={{ minWidth: 0 }}>
             <div className="row row--gap2">
               <div className="eyebrow">{t("admin_title")}</div>
-              {isSuper && <span className="badge badge--role" style={{ color: "var(--gold)" }}>● {t("super_title")}</span>}
             </div>
             <div className="admin-fullview__title display">
-              {isSuper
-                ? "All applications"
-                : (myGuild === "rad" ? "RAD · The Radiant" : "MTLH · Metalheads")}
+              {forceGuild === "rad" ? "RAD · The Radiant" : "MTLH · Metalheads"}
             </div>
           </div>
 
@@ -206,13 +190,6 @@ function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
             ))}
           </div>
         </div>
-
-        {isSuper && (
-          <div className="row row--gap2">
-            <button className={`btn btn--sm ${guildFilter === "rad" ? "btn--primary" : "btn--ghost"}`} onClick={() => setGuildFilter("rad")}>RAD</button>
-            <button className={`btn btn--sm ${guildFilter === "mtlh" ? "btn--primary" : "btn--ghost"}`} onClick={() => setGuildFilter("mtlh")}>MTLH</button>
-          </div>
-        )}
       </div>
 
       <div className="admin-fullview__mobiletabs">
