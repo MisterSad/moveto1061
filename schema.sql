@@ -92,6 +92,8 @@ $$ LANGUAGE sql SECURITY DEFINER;
 -- PROFILES
 -- Anyone can read profiles
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
+-- Users can insert their own profile
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 -- Super admins can update any profile (to assign roles/prince/recruiter)
