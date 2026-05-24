@@ -14,6 +14,7 @@ function calcAvg(total, members) {
 function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
   const [form, setForm] = _gs(settings);
   const [saved, setSaved] = _gs(false);
+  const [uploading, setUploading] = _gs(false);
 
   // Sync form when settings change externally (i.e. on guild switch or remote update)
   React.useEffect(() => { setForm(settings); }, [guild, settings]);
@@ -36,6 +37,29 @@ function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
     if (!form || !settings) return false;
     return JSON.stringify(form) !== JSON.stringify(settings);
   }, [form, settings]);
+
+  async function uploadLogo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${guild}-${Math.random()}.${fileExt}`;
+    
+    const { error: uploadError } = await window.supabaseClient.storage
+      .from('guild_logos')
+      .upload(fileName, file, { upsert: true });
+      
+    if (uploadError) {
+      alert("Error uploading logo: " + uploadError.message);
+      setUploading(false);
+      return;
+    }
+    
+    const { data } = window.supabaseClient.storage.from('guild_logos').getPublicUrl(fileName);
+    set("logo_url", data.publicUrl);
+    setUploading(false);
+  }
 
   function manualSave() {
     onSave(form);
@@ -147,9 +171,18 @@ function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
         </Field>
         
         <div style={{ marginTop: 20 }}>
-          <Field label="Logo URL" hint="Lien direct vers une image (ex: .png, .jpg)">
-            <input className="input" value={form?.logo_url ?? ""} placeholder="https://..."
-              onChange={e => set("logo_url", e.target.value)} />
+          <Field label="Guild Logo" hint="Taille recommandée : 200x200px (PNG/JPG)">
+            {uploading ? (
+              <div className="input mono" style={{ color: "var(--ink-mute)" }}>Uploading...</div>
+            ) : (
+              <input className="input" type="file" accept="image/png, image/jpeg"
+                onChange={uploadLogo} />
+            )}
+            {form?.logo_url && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "var(--ok)" }}>
+                ✓ Logo uploadé avec succès
+              </div>
+            )}
           </Field>
         </div>
       </div>
