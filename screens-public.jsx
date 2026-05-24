@@ -27,10 +27,7 @@ function LandingScreen({ t, lang, setRoute, role, guildSettings }) {
           </div>
 
           <div className="mono" style={{ marginTop: 64, color: "var(--ink-mute)", fontSize: 12, letterSpacing: "0.18em" }}>
-            ─── 21 : 14 : 03 : 47 ───
-            <div style={{ marginTop: 4, fontSize: 10, letterSpacing: "0.22em" }}>
-              {lang === "fr" ? "TEMPS RESTANT AVANT MIGRATION" : "TIME UNTIL MIGRATION"}
-            </div>
+            {lang === "fr" ? "LA FENÊTRE DE MIGRATION OUVRIRA BIENTÔT" : "MIGRATION WINDOWS WILL OPEN SOON"}
           </div>
         </div>
       </section>
