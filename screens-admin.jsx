@@ -383,7 +383,7 @@ function PrinceDashboardScreen({ t, lang }) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 12 }}>
+            <div className="grid-resp-4 mt-4" style={{ gap: 12 }}>
               {[
                 { k: "pending", c: "var(--warn)", l: t("status_pending") },
                 { k: "review", c: "var(--info)", l: t("status_review") },
@@ -436,7 +436,7 @@ function SystemAdminScreen({ t, lang }) {
       
       <p className="subtle" style={{ marginBottom: 24, marginTop: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
       <div className="card" style={{ overflowX: "auto" }}>
-        <div className="team-list__head" style={{ minWidth: 600, display: "grid", gridTemplateColumns: "1fr 120px 80px 80px 80px", gap: 12, padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
+        <div className="team-list__head">
           <div>Member</div>
           <div>Base Role</div>
           <div style={{ textAlign: "center" }}>Prince?</div>
@@ -444,7 +444,7 @@ function SystemAdminScreen({ t, lang }) {
           <div style={{ textAlign: "center", color: "var(--gold)" }}>Admin?</div>
         </div>
         {team.map(m => (
-           <div key={m.id} style={{ minWidth: 600, display: "grid", gridTemplateColumns: "1fr 120px 80px 80px 80px", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
+           <div key={m.id} className="team-row">
               <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
               </div>
