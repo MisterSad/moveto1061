@@ -459,17 +459,20 @@ function SystemAdminScreen({ t, lang }) {
                   <option value="mtlh_r5">MTLH R5</option>
                 </select>
               </div>
-              <div style={{ textAlign: "center" }}>
+              <div className="team-row__cb">
+                <span className="mobile-label">Prince?</span>
                 <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
-              <div style={{ textAlign: "center" }}>
+              <div className="team-row__cb">
+                <span className="mobile-label">Recruiter?</span>
                 <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
-              <div style={{ textAlign: "center" }}>
+              <div className="team-row__cb">
+                <span className="mobile-label" style={{ color: "var(--gold)" }}>Admin?</span>
                 <input type="checkbox" checked={!!m.is_admin} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_admin: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
