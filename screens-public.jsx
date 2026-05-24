@@ -99,7 +99,7 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
   return (
     <div className={`guild-card guild-card--${guild}`} style={{ color: `var(--${c})` }}>
       <div className="guild-card__sigil">
-        <GuildSigil guild={guild} size={80} />
+        <GuildSigil guild={guild} size={80} logoUrl={s?.logo_url} />
       </div>
       <div style={{ textAlign: "center", color: "var(--ink)" }}>
         <div className="eyebrow" style={{ color: `var(--${c})` }}>{guild === "rad" ? "Order I" : "Order II"}</div>
@@ -306,7 +306,7 @@ function ProfileScreen({ t, lang, session, profile, setProfile, draftApp, setDra
 // ============================================================
 // APPLY — guild picker
 // ============================================================
-function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute }) {
+function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute, guildSettings }) {
   const [pick, setPick] = _useState(null);
   const [saving, setSaving] = _useState(false);
 
@@ -364,7 +364,7 @@ function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute
           <div key={g} className={`guild-pick guild-pick--${g} ${pick === g ? "selected" : ""}`}
             onClick={() => setPick(g)}>
             <div style={{ color: `var(--${g})`, margin: "0 auto 16px", width: 72, height: 72 }}>
-              <GuildSigil guild={g} size={72} />
+              <GuildSigil guild={g} size={72} logoUrl={guildSettings?.[g]?.logo_url} />
             </div>
             <div className="display" style={{ fontSize: 22, marginTop: 4 }}>
               {g === "rad" ? "RAD · The Radiant" : "MTLH · Metalheads"}
