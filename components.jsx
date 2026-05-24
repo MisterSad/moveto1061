@@ -109,7 +109,7 @@ function LangToggle({ lang, setLang }) {
 }
 
 // ===== TopBar =====
-function TopBar({ route, setRoute, role, lang, setLang, t, onLogout, selfName }) {
+function TopBar({ route, setRoute, role, isAdmin, isPrince, lang, setLang, t, onLogout, selfName }) {
   const [open, setOpen] = useState(false);
 
   // Available routes based on role
@@ -121,22 +121,27 @@ function TopBar({ route, setRoute, role, lang, setLang, t, onLogout, selfName })
     navs.push({ k: "player", label: t("nav_player") });
   } else if (role === "rad_r5" || role === "rad_r4") {
     navs.push({ k: "landing", label: t("nav_landing") });
-    navs.push({ k: "admin", label: t("nav_admin") });
+    navs.push({ k: "admin/rad", label: "Recrutement RAD" });
     if (role === "rad_r5") navs.push({ k: "guild_settings", label: t("nav_guild_settings") });
   } else if (role === "mtlh_r5" || role === "mtlh_r4") {
     navs.push({ k: "landing", label: t("nav_landing") });
-    navs.push({ k: "admin", label: t("nav_admin") });
+    navs.push({ k: "admin/mtlh", label: "Recrutement MTLH" });
     if (role === "mtlh_r5") navs.push({ k: "guild_settings", label: t("nav_guild_settings") });
-  } else if (role === "prince") {
-    navs.push({ k: "landing", label: t("nav_landing") });
-    navs.push({ k: "admin", label: t("nav_admin") });
-    navs.push({ k: "prince", label: "Prince View" });
-  } else if (role === "super") {
-    navs.push({ k: "landing", label: t("nav_landing") });
-    navs.push({ k: "admin", label: t("nav_admin") });
-    navs.push({ k: "prince", label: "Prince View" });
-    navs.push({ k: "guild_settings", label: t("nav_guild_settings") });
-    navs.push({ k: "system", label: "System Admin" });
+  }
+
+  // Add Prince View if applicable
+  if (isPrince || isAdmin) {
+    // Avoid duplicate if not already added by role
+    if (!navs.find(n => n.k === "prince")) {
+       navs.push({ k: "prince", label: "Prince View" });
+    }
+  }
+
+  // Add System Admin if applicable
+  if (isAdmin) {
+    if (!navs.find(n => n.k === "system")) {
+       navs.push({ k: "system", label: "System Admin" });
+    }
   }
 
   function go(k) { setRoute(k); setOpen(false); }

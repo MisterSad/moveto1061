@@ -72,18 +72,19 @@ function App() {
   const role = useMemo(() => {
     if (!session) return "visitor";
     if (!profile) return "player_new";
+    // Backwards compatibility if they still use 'super'
+    if (profile.role === "super") return "rad_r5";
     return profile.role || "player_new";
   }, [session, profile]);
 
-  const navRole = useMemo(() => {
-    if (role === "visitor") return "visitor";
-    if (role === "player_new" || role === "player") return "player";
-    if (role === "super") return "super";
-    if (profile?.is_prince || profile?.is_recruiter) return "prince";
-    if (role.startsWith("rad")) return "rad_r5";
-    if (role.startsWith("mtlh")) return "mtlh_r5";
-    return "visitor";
-  }, [role, profile]);
+  const isAdmin = useMemo(() => {
+    if (profile?.role === "super") return true;
+    return !!profile?.is_admin;
+  }, [profile]);
+
+  const isPrince = useMemo(() => {
+    return !!profile?.is_prince || !!profile?.is_recruiter;
+  }, [profile]);
 
   // ===== Route =====
   const navigate = useNavigate();
@@ -112,13 +113,14 @@ function App() {
 
   let body = (
     <Routes>
-      <Route path="/" element={<LandingScreen t={t} lang={lang} setRoute={setRoute} role={navRole} guildSettings={guildSettings} />} />
+      <Route path="/" element={<LandingScreen t={t} lang={lang} setRoute={setRoute} role={role} guildSettings={guildSettings} />} />
       <Route path="/login" element={<LoginScreen t={t} lang={lang} session={session} setRoute={setRoute} />} />
       <Route path="/guild_settings" element={<GuildSettingsScreen t={t} lang={lang} guild={myGuild} settings={guildSettings[myGuild]} onSave={(patch) => updateGuildSettings(myGuild, patch)} />} />
       <Route path="/profile" element={<ProfileScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setDraftApp={setDraftApp} setRoute={setRoute} />} />
       <Route path="/apply" element={!session ? <Navigate to="/profile" replace /> : <ApplyScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setRoute={setRoute} />} />
       <Route path="/player" element={<PlayerDashboard t={t} lang={lang} session={session} profile={profile} />} />
-      <Route path="/admin" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} isSuper={role === "super" || profile?.is_prince || profile?.is_recruiter} />} />
+      <Route path="/admin/rad" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="rad" />} />
+      <Route path="/admin/mtlh" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="mtlh" />} />
       <Route path="/prince" element={<PrinceDashboardScreen t={t} lang={lang} />} />
       <Route path="/system" element={<SystemAdminScreen t={t} lang={lang} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -129,7 +131,9 @@ function App() {
     <div className="app">
       <TopBar
         route={route} setRoute={setRoute}
-        role={navRole}
+        role={role}
+        isAdmin={isAdmin}
+        isPrince={isPrince}
         lang={lang} setLang={setLang}
         t={t}
         onLogout={logout}

@@ -10,6 +10,7 @@ CREATE TABLE public.profiles (
   discord_tag TEXT NOT NULL,
   is_prince BOOLEAN DEFAULT FALSE,
   is_recruiter BOOLEAN DEFAULT FALSE,
+  is_admin BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -96,9 +97,9 @@ CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT 
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
--- Super admins can update any profile (to assign roles/prince/recruiter)
+-- Super admins can update any profile (to assign roles/prince/recruiter/admin)
 CREATE POLICY "Super admin can update any profile" ON public.profiles FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super')
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'super' OR is_admin = true))
 );
 
 -- APPLICATIONS

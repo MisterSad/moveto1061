@@ -438,16 +438,17 @@ function SystemAdminScreen({ t, lang }) {
       <div className="card">
         <div className="team-list__head row row--between" style={{ padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
           <div style={{ flex: 1 }}>Member</div>
-          <div style={{ width: 150 }}>Base Role</div>
-          <div style={{ width: 100, textAlign: "center" }}>Prince?</div>
-          <div style={{ width: 100, textAlign: "center" }}>Recruiter?</div>
+          <div style={{ width: 130 }}>Base Role</div>
+          <div style={{ width: 80, textAlign: "center" }}>Prince?</div>
+          <div style={{ width: 80, textAlign: "center" }}>Recruiter?</div>
+          <div style={{ width: 80, textAlign: "center", color: "var(--gold)" }}>Admin?</div>
         </div>
         {team.map(m => (
            <div key={m.id} className="row row--between" style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
               <div style={{ flex: 1 }}>
                 <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
               </div>
-              <div style={{ width: 150 }}>
+              <div style={{ width: 130 }}>
                 <select className="select" style={{ padding: "4px 8px", fontSize: 13 }} value={m.role} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchTeam());
                 }}>
@@ -456,17 +457,21 @@ function SystemAdminScreen({ t, lang }) {
                   <option value="rad_r5">RAD R5</option>
                   <option value="mtlh_r4">MTLH R4</option>
                   <option value="mtlh_r5">MTLH R5</option>
-                  <option value="super">Admin</option>
                 </select>
               </div>
-              <div style={{ width: 100, textAlign: "center" }}>
+              <div style={{ width: 80, textAlign: "center" }}>
                 <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
-              <div style={{ width: 100, textAlign: "center" }}>
+              <div style={{ width: 80, textAlign: "center" }}>
                 <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                }} />
+              </div>
+              <div style={{ width: 80, textAlign: "center" }}>
+                <input type="checkbox" checked={!!m.is_admin} onChange={(e) => {
+                  window.supabaseClient.from('profiles').update({ is_admin: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
            </div>
