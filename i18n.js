@@ -1,0 +1,258 @@
+// Bilingual strings (FR / EN)
+window.I18N = {
+  fr: {
+    // nav
+    nav_landing: "Accueil",
+    nav_player: "Mon profil",
+    nav_admin: "Recrutement",
+    nav_super: "Prince Dashboard",
+    nav_guild_settings: "Ma guilde",
+    nav_logout: "Déconnexion",
+    nav_login: "Connexion",
+
+    // landing
+    hero_eyebrow: "Migration Inter-Serveurs — Destination #1061",
+    hero_title_a: "Serveur #1061.",
+    hero_title_b: "Deux guildes.",
+    hero_title_c: "Un front.",
+    hero_lead: "Les fenêtres de migration ouvrent sous XX jours.\nLe serveur #1061 accueille [RAD] The Radiant et [MTLH] Metalheads,\nses deux guildes principales, qui recrutent activement\navant la consolidation. Postulez à la guilde de votre choix.",
+    hero_cta_apply: "Déposer ma candidature",
+    hero_cta_learn: "Découvrir les guildes",
+
+    rad_motto: "« Que ceux qui brûlent éclairent le chemin »",
+    mtlh_motto: "« L'acier ne demande pas la permission »",
+    rad_pitch: "Coordination chirurgicale, jeu organisé, KvK haut niveau. La Radiant aligne ses heures, ses cibles, et ses pertes.",
+    mtlh_pitch: "Brute force et discipline du fer. Metalheads frappe fort, frappe ensemble, et ne lâche jamais une cible avant qu'elle soit morte.",
+    stat_members: "Membres",
+    stat_avg_power: "Puiss. moy.",
+    stat_server: "Serveurs",
+    stat_open_slots: "Slots ouverts",
+
+    apply_to_guild: "Postuler à cette guilde",
+    requirements: "Pré-requis",
+    req_rad_1: "Puissance ≥ 60M",
+    req_rad_2: "Discord actif",
+    req_rad_3: "Présence KvK obligatoire",
+    req_mtlh_1: "Puissance ≥ 45M",
+    req_mtlh_2: "Discord actif",
+    req_mtlh_3: "Rallies coordonnés (FR/EN)",
+
+    // login
+    login_title: "Authentification",
+    login_lead: "Connectez-vous avec Discord pour accéder au portail de recrutement.",
+    login_cta: "Continuer avec Discord",
+    login_disclaimer: "Mock OAuth pour démo. Sélectionnez un compte ci-dessous pour vous identifier.",
+    login_pick_account: "Profils de démo",
+
+    // profile creation
+    profile_title: "Crée ton profil joueur",
+    profile_lead: "Ces informations seront visibles par les R5 et R4 de la guilde à laquelle tu postules.",
+    f_ign: "Nom en jeu",
+    f_uid: "UID",
+    f_server: "Serveur actuel",
+    f_power: "Puissance totale",
+    f_timezone: "Fuseau / disponibilité",
+    f_language: "Langue(s) parlée(s)",
+    f_discord: "Discord tag",
+    f_motivation: "Motivation",
+    f_motivation_hint: "Pourquoi tu rejoins, ce que tu apportes, ton historique. 3 lignes suffisent.",
+    save_continue: "Enregistrer et continuer",
+    optional: "optionnel",
+    required: "requis",
+
+    // application
+    apply_title: "Dépose ta candidature",
+    apply_lead: "Choisis la guilde que tu vises. Tu ne peux postuler qu'à une seule guilde à la fois.",
+    apply_submit: "Soumettre la candidature",
+    apply_change: "Changer de guilde",
+
+    // player dashboard
+    dash_title: "Tableau de bord",
+    dash_status: "Statut de candidature",
+    status_pending: "En attente",
+    status_review: "À discuter",
+    status_accepted: "Acceptée",
+    status_rejected: "Refusée",
+    status_pending_desc: "Ta candidature vient d'être déposée. Les R5/R4 vont l'examiner.",
+    status_review_desc: "Tu es en discussion. Les R5/R4 votent — tu peux échanger avec eux dans le chat.",
+    status_accepted_desc: "Bienvenue. Tu seras intégré à la migration.",
+    status_rejected_desc: "Ta candidature n'a pas été retenue cette fois. Tu peux réessayer après la prochaine fenêtre.",
+    internal_chat: "Chat interne",
+    chat_with: "Avec",
+
+    // admin
+    admin_title: "Recrutement",
+    admin_sub: "Gestion des candidatures",
+    tab_pending: "Nouvelles",
+    tab_review: "À discuter",
+    tab_accepted: "Acceptées",
+    tab_rejected: "Refusées",
+    tab_all: "Toutes",
+    no_candidates: "Aucun candidat dans cette catégorie",
+
+    col_player: "Joueur",
+    col_power: "Puissance",
+    col_server: "Serveur",
+    col_timezone: "Fuseau",
+    col_votes: "Votes",
+    col_status: "Statut",
+
+    move_to_review: "Mettre à discuter",
+    accept: "Accepter",
+    reject: "Refuser",
+    move_back: "Remettre en attente",
+
+    // detail
+    candidate_profile: "Profil du candidat",
+    candidate_chat: "Discussion interne",
+
+    // super admin
+    super_title: "Prince Dashboard",
+    super_sub: "Vue consolidée des deux guildes",
+    super_warn: "Cette vue n'est accessible qu'à l'admin du site. Les R5/R4 de chaque guilde voient uniquement leurs candidats.",
+
+    // roster
+    roster_title: "Roster migration",
+    roster_sub: "Joueurs confirmés pour la prochaine fenêtre",
+
+    // vote
+    vote_yes: "Pour",
+    vote_no: "Contre",
+    vote_abstain: "Neutre",
+    you_voted: "Tu as voté",
+
+    // chat
+    type_message: "Écrire un message…",
+    send: "Envoyer",
+    typing: "écrit",
+
+    // misc
+    role_switcher: "Démo — change de rôle",
+    role_player: "Joueur",
+    role_rad_r5: "R5 RAD",
+    role_mtlh_r5: "R5 MTLH",
+    role_super: "Prince",
+    role_visitor: "Visiteur",
+  },
+  en: {
+    nav_landing: "Home",
+    nav_player: "My profile",
+    nav_admin: "Recruitment",
+    nav_super: "Prince Dashboard",
+    nav_guild_settings: "My guild",
+    nav_logout: "Log out",
+    nav_login: "Log in",
+
+    hero_eyebrow: "Cross-Server Migration — Destination #1061",
+    hero_title_a: "Server #1061.",
+    hero_title_b: "Two guilds.",
+    hero_title_c: "One frontier.",
+    hero_lead: "Migration windows open in XX days.\nServer #1061 is home to [RAD] The Radiant and [MTLH] Metalheads,\nits two top guilds, both actively recruiting before consolidation.\nApply to the guild of your choice.",
+    hero_cta_apply: "Submit my application",
+    hero_cta_learn: "Meet the guilds",
+
+    rad_motto: "\"Let those who burn light the path\"",
+    mtlh_motto: "\"Steel doesn't ask permission\"",
+    rad_pitch: "Surgical coordination, structured play, top-tier SvS & GvG. The Radiant aligns its hours, its targets, and its losses.",
+    mtlh_pitch: "Brute force and iron discipline. Metalheads hits hard, hits together, and never drops a target until it's dead.",
+    stat_members: "Members",
+    stat_avg_power: "Avg. power",
+    stat_server: "Servers",
+    stat_open_slots: "Open slots",
+
+    apply_to_guild: "Apply to this guild",
+    requirements: "Requirements",
+    req_rad_1: "Power ≥ 60M",
+    req_rad_2: "Active on Discord",
+    req_rad_3: "Mandatory SvS & GvG presence",
+    req_mtlh_1: "Power ≥ 45M",
+    req_mtlh_2: "Active on Discord",
+    req_mtlh_3: "Coordinated rallies (FR/EN)",
+
+    login_title: "Authentication",
+    login_lead: "Sign in with Discord to access the recruitment portal.",
+    login_cta: "Continue with Discord",
+    login_disclaimer: "Mock OAuth for demo. Pick an account below to sign in.",
+    login_pick_account: "Demo profiles",
+
+    profile_title: "Set up your player profile",
+    profile_lead: "This information will be visible to R5 and R4 of the guild you apply to.",
+    f_ign: "In-game name",
+    f_uid: "UID",
+    f_server: "Current server",
+    f_power: "Total power",
+    f_timezone: "Timezone / availability",
+    f_language: "Language(s) spoken",
+    f_discord: "Discord tag",
+    f_motivation: "Motivation",
+    f_motivation_hint: "Why you're joining, what you bring, your history. 3 lines is enough.",
+    save_continue: "Save and continue",
+    optional: "optional",
+    required: "required",
+
+    apply_title: "Submit your application",
+    apply_lead: "Choose the guild you're aiming for. You can only apply to one guild at a time.",
+    apply_submit: "Submit application",
+    apply_change: "Change guild",
+
+    dash_title: "Dashboard",
+    dash_status: "Application status",
+    status_pending: "Pending",
+    status_review: "Under review",
+    status_accepted: "Accepted",
+    status_rejected: "Rejected",
+    status_pending_desc: "Your application was just submitted. R5/R4 will review it.",
+    status_review_desc: "You're being discussed. R5/R4 are voting — feel free to chat with them.",
+    status_accepted_desc: "Welcome. You'll be integrated into the migration.",
+    status_rejected_desc: "Your application wasn't accepted this time. You can retry after the next window.",
+    internal_chat: "Internal chat",
+    chat_with: "With",
+
+    admin_title: "Recruitment",
+    admin_sub: "Application management",
+    tab_pending: "New",
+    tab_review: "Under review",
+    tab_accepted: "Accepted",
+    tab_rejected: "Rejected",
+    tab_all: "All",
+    no_candidates: "No candidates in this bucket",
+
+    col_player: "Player",
+    col_power: "Power",
+    col_server: "Server",
+    col_timezone: "TZ",
+    col_votes: "Votes",
+    col_status: "Status",
+
+    move_to_review: "Move to review",
+    accept: "Accept",
+    reject: "Reject",
+    move_back: "Back to pending",
+
+    candidate_profile: "Candidate profile",
+    candidate_chat: "Internal discussion",
+
+    super_title: "Prince Dashboard",
+    super_sub: "Consolidated view of both guilds",
+    super_warn: "This view is restricted to the Prince. Each guild's R5/R4 only see their own candidates.",
+
+    roster_title: "Migration roster",
+    roster_sub: "Confirmed players for the next window",
+
+    vote_yes: "Yes",
+    vote_no: "No",
+    vote_abstain: "Neutral",
+    you_voted: "You voted",
+
+    type_message: "Type a message…",
+    send: "Send",
+    typing: "typing",
+
+    role_switcher: "Demo — switch role",
+    role_player: "Player",
+    role_rad_r5: "RAD R5",
+    role_mtlh_r5: "MTLH R5",
+    role_super: "Prince",
+    role_visitor: "Visitor",
+  },
+};
