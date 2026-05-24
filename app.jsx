@@ -1,6 +1,7 @@
 // Main app — routing, state management, role switching for demo.
 
 const { useState: aUs, useEffect: aUe, useMemo: aUm } = React;
+const { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } = ReactRouterDOM;
 
 // Secure password generator — 16 chars, ensures variety, avoids ambiguous chars
 function generatePassword(len = 16) {
@@ -154,7 +155,12 @@ function App() {
   }, [selfApplicantId]);
 
   // ===== Route =====
-  const [route, setRoute] = aUs("landing");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const route = location.pathname === "/" ? "landing" : location.pathname.substring(1);
+  const setRoute = (r) => {
+    navigate(r === "landing" ? "/" : `/${r}`);
+  };
 
   // ===== Derived: current user info =====
   const currentUserInfo = aUm(() => {
@@ -273,45 +279,21 @@ function App() {
   }
 
   // ===== Render =====
-  let body = null;
-  if (route === "login") {
-    body = <LoginScreen t={t} lang={lang} login={login} staffLogin={staffLogin} />;
-  } else if (route === "landing") {
-    body = <LandingScreen t={t} lang={lang} setRoute={setRoute} role={navRole} guildSettings={guildSettings} />;
-  } else if (route === "guild_settings") {
-    const myGuild = role.startsWith("rad") ? "rad" : role.startsWith("mtlh") ? "mtlh" : "rad";
-    body = <GuildSettingsScreen t={t} lang={lang} guild={myGuild} settings={guildSettings[myGuild]} onSave={(patch) => updateGuildSettings(myGuild, patch)} />;
-  } else if (route === "profile") {
-    body = <ProfileScreen t={t} lang={lang} profile={profile} setProfile={setProfile} setRoute={setRoute} />;
-  } else if (route === "apply") {
-    if (!profile) { setRoute("profile"); return null; }
-    body = <ApplyScreen t={t} lang={lang} profile={profile} setApplication={submitApplication} setRoute={setRoute} />;
-  } else if (route === "player") {
-    const myApp = applicants.find(a => a.id === currentUserInfo.id);
-    body = <PlayerDashboard t={t} lang={lang} applicant={myApp} onSend={sendMessage} onVote={vote} />;
-  } else if (route === "admin") {
-    body = <AdminDashboard
-      t={t} lang={lang}
-      role={role}
-      currentUserId={currentUserInfo.id}
-      applicants={applicants}
-      onChangeStatus={changeStatus}
-      onSend={sendMessage}
-      onVote={vote}
-      isSuper={role === "super" || role === "recruiter"}
-    />;
-  } else if (route === "super") {
-    body = <SuperAdminScreen
-      t={t} lang={lang}
-      applicants={applicants}
-      team={team}
-      isPrince={role === "super"}
-      onCreateMember={createMember}
-      onUpdateMember={updateMember}
-      onDeleteMember={deleteMember}
-      onRegeneratePassword={regeneratePassword}
-    />;
-  }
+  const myGuild = role.startsWith("rad") ? "rad" : role.startsWith("mtlh") ? "mtlh" : "rad";
+  
+  let body = (
+    <Routes>
+      <Route path="/" element={<LandingScreen t={t} lang={lang} setRoute={setRoute} role={navRole} guildSettings={guildSettings} />} />
+      <Route path="/login" element={<LoginScreen t={t} lang={lang} login={login} staffLogin={staffLogin} />} />
+      <Route path="/guild_settings" element={<GuildSettingsScreen t={t} lang={lang} guild={myGuild} settings={guildSettings[myGuild]} onSave={(patch) => updateGuildSettings(myGuild, patch)} />} />
+      <Route path="/profile" element={<ProfileScreen t={t} lang={lang} profile={profile} setProfile={setProfile} setRoute={setRoute} />} />
+      <Route path="/apply" element={!profile ? <Navigate to="/profile" replace /> : <ApplyScreen t={t} lang={lang} profile={profile} setApplication={submitApplication} setRoute={setRoute} />} />
+      <Route path="/player" element={<PlayerDashboard t={t} lang={lang} applicant={applicants.find(a => a.id === currentUserInfo.id)} onSend={sendMessage} onVote={vote} />} />
+      <Route path="/admin" element={<AdminDashboard t={t} lang={lang} role={role} currentUserId={currentUserInfo.id} applicants={applicants} onChangeStatus={changeStatus} onSend={sendMessage} onVote={vote} isSuper={role === "super" || role === "recruiter"} />} />
+      <Route path="/super" element={<SuperAdminScreen t={t} lang={lang} applicants={applicants} team={team} isPrince={role === "super"} onCreateMember={createMember} onUpdateMember={updateMember} onDeleteMember={deleteMember} onRegeneratePassword={regeneratePassword} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 
   return (
     <div className="app">
@@ -388,4 +370,8 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "goldHue": "oklch(0.82 0.12 78)"
 }/*EDITMODE-END*/;
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);

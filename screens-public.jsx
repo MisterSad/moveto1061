@@ -180,7 +180,7 @@ function LoginScreen({ t, lang, login, staffLogin }) {
         </div>
 
         <button className="btn btn--discord" style={{ width: "100%", marginTop: 24, justifyContent: "center" }}
-          onClick={() => login({ role: "player_new" })}>
+          onClick={() => window.location.href = '/api/auth/discord'}>
           <svg width="20" height="15" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.6 58.6 0 0 0 45.4.5l-.6 1.4a54 54 0 0 0-12.9 0L31.3.5c-5 .8-10 2.3-14.6 4.4C7.5 18.8 5 32.3 6.3 45.6a59 59 0 0 0 17.7 8.9l1.5-2c-2.4-.9-4.7-2-7-3.4l1.7-1.4a42 42 0 0 0 35.7 0l1.7 1.4c-2.2 1.3-4.5 2.5-7 3.4l1.5 2a59 59 0 0 0 17.7-8.9c1.4-15.3-2.4-28.6-9.7-40.7Zm-35.7 33c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.5 3.2 6.4 7.1 0 4-2.9 7.2-6.4 7.2Zm22.2 0c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.4 3.2 6.4 7.1 0 4-2.8 7.2-6.4 7.2Z"/></svg>
           {t("login_cta")}
         </button>
@@ -231,8 +231,16 @@ function LoginScreen({ t, lang, login, staffLogin }) {
 // PROFILE CREATION
 // ============================================================
 function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
-  const [form, setForm] = _useState(profile || {
-    ign: "", uid: "", server: "", power: "", timezone: "", language: "", discord: "", motivation: "",
+  const [form, setForm] = _useState(() => {
+    if (profile) return profile;
+    const initial = { ign: "", uid: "", server: "", power: "", timezone: "", language: "", discord: "", motivation: "" };
+    try {
+      const dUser = JSON.parse(localStorage.getItem('radmtlh_discordUser'));
+      if (dUser && dUser.username) {
+        initial.discord = dUser.username + (dUser.discriminator && dUser.discriminator !== "0" ? "#" + dUser.discriminator : "");
+      }
+    } catch(e) {}
+    return initial;
   });
   const [errors, setErrors] = _useState({});
 
