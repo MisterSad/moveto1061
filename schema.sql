@@ -8,6 +8,8 @@ CREATE TABLE public.profiles (
   role TEXT NOT NULL DEFAULT 'player_new',
   guild TEXT,
   discord_tag TEXT NOT NULL,
+  is_prince BOOLEAN DEFAULT FALSE,
+  is_recruiter BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -64,7 +66,8 @@ CREATE TABLE public.guild_settings (
 INSERT INTO public.guild_settings (id, members, avg_power, slots, pitch, pitch_en)
 VALUES 
 ('rad', 47, '73M', 8, 'Coordination chirurgicale, jeu organisé, KvK haut niveau. La Radiant aligne ses heures, ses cibles, et ses pertes.', 'Surgical coordination, structured play, top-tier SvS & GvG. The Radiant aligns its hours, its targets, and its losses.'),
-('mtlh', 52, '58M', 12, 'Brute force et discipline du fer. Metalheads frappe fort, frappe ensemble, et ne lâche jamais une cible avant qu''elle soit morte.', 'Brute force and iron discipline. Metalheads hits hard, hits together, and never drops a target until it''s dead.');
+('mtlh', 52, '58M', 12, 'Brute force et discipline du fer. Metalheads frappe fort, frappe ensemble, et ne lâche jamais une cible avant qu''elle soit morte.', 'Brute force and iron discipline. Metalheads hits hard, hits together, and never drops a target until it''s dead.')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
 -- RLS (Row Level Security) Configuration
@@ -76,7 +79,7 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guild_settings ENABLE ROW LEVEL SECURITY;
 
--- Helper function to check if user is officer
+-- Helper function to check if user is officer (any R4/R5 or super)
 CREATE OR REPLACE FUNCTION is_officer(check_user_id UUID)
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
@@ -91,40 +94,54 @@ $$ LANGUAGE sql SECURITY DEFINER;
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+-- Super admins can update any profile (to assign roles/prince/recruiter)
+CREATE POLICY "Super admin can update any profile" ON public.profiles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super')
+);
 
 -- APPLICATIONS
--- Officers can view all applications, users can view their own
-CREATE POLICY "Officers can view all applications" ON public.applications FOR SELECT USING (is_officer(auth.uid()));
-CREATE POLICY "Users can view own application" ON public.applications FOR SELECT USING (auth.uid() = user_id);
+-- RLS for SELECT
+CREATE POLICY "Officers can view relevant applications" ON public.applications FOR SELECT USING (
+  -- Super admin sees all
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super')) OR
+  -- R4/R5 see their guild
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('rad_r4', 'rad_r5') AND public.applications.guild = 'rad')) OR
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('mtlh_r4', 'mtlh_r5') AND public.applications.guild = 'mtlh')) OR
+  -- Prince and Recruiter see all accepted apps
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (is_prince = true OR is_recruiter = true) AND public.applications.status = 'accepted')) OR
+  -- Users see their own
+  (auth.uid() = user_id)
+);
 -- Authenticated users can create an application
 CREATE POLICY "Users can create application" ON public.applications FOR INSERT WITH CHECK (auth.uid() = user_id);
--- Users can update their own application if pending, officers can update any
+-- Users can update their own application if pending
 CREATE POLICY "Users can update own pending app" ON public.applications FOR UPDATE USING (auth.uid() = user_id AND status = 'pending');
-CREATE POLICY "Officers can update any app" ON public.applications FOR UPDATE USING (is_officer(auth.uid()));
+-- Officers can update applications in their guild, super admin can update any
+CREATE POLICY "Officers can update relevant apps" ON public.applications FOR UPDATE USING (
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'super')) OR
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('rad_r4', 'rad_r5') AND public.applications.guild = 'rad')) OR
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('mtlh_r4', 'mtlh_r5') AND public.applications.guild = 'mtlh'))
+);
 
 -- MESSAGES
--- Officers can view all, users can view messages on their own app
-CREATE POLICY "Officers can view all messages" ON public.messages FOR SELECT USING (is_officer(auth.uid()));
+-- Officers can view all messages for apps they can see
+CREATE POLICY "Officers can view messages" ON public.messages FOR SELECT USING (is_officer(auth.uid()));
 CREATE POLICY "Users can view messages on their app" ON public.messages FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.applications WHERE id = messages.application_id AND user_id = auth.uid())
 );
--- Officers can insert on any, users can insert on their own app
+-- Officers can insert messages
 CREATE POLICY "Officers can insert messages" ON public.messages FOR INSERT WITH CHECK (is_officer(auth.uid()));
 CREATE POLICY "Users can insert messages on their app" ON public.messages FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.applications WHERE id = application_id AND user_id = auth.uid())
 );
 
 -- VOTES
--- Officers can view all votes
 CREATE POLICY "Officers can view votes" ON public.votes FOR SELECT USING (is_officer(auth.uid()));
--- Only officers can insert/update their own votes
 CREATE POLICY "Officers can vote" ON public.votes FOR INSERT WITH CHECK (is_officer(auth.uid()) AND auth.uid() = user_id);
 CREATE POLICY "Officers can change vote" ON public.votes FOR UPDATE USING (is_officer(auth.uid()) AND auth.uid() = user_id);
 
 -- GUILD SETTINGS
--- Anyone can view
 CREATE POLICY "Settings are viewable by everyone" ON public.guild_settings FOR SELECT USING (true);
--- Only super/R5 can update
 CREATE POLICY "Super and R5 can update settings" ON public.guild_settings FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('super', 'rad_r5', 'mtlh_r5'))
 );
