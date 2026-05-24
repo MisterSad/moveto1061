@@ -19,38 +19,20 @@ function Glyph({ size = 28 }) {
 
 // ===== Guild sigil — abstract emblems, NOT logos =====
 function GuildSigil({ guild, size = 96, logoUrl = null }) {
-  if (logoUrl && logoUrl.trim() !== "") {
-    return (
-      <img src={logoUrl} alt={`${guild} logo`} style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
-    );
-  }
-
+  // If a logoUrl is passed dynamically (legacy), we can still use it, 
+  // but by default we use the hardcoded images.
   if (guild === "rad") {
     return (
-      <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: "block" }}>
-        <circle cx="50" cy="50" r="32" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.5" />
-        {Array.from({ length: 12 }).map((_, i) => {
-          const a = (i / 12) * Math.PI * 2;
-          const x1 = 50 + Math.cos(a) * 38;
-          const y1 = 50 + Math.sin(a) * 38;
-          const x2 = 50 + Math.cos(a) * 46;
-          const y2 = 50 + Math.sin(a) * 46;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1.5" />;
-        })}
-        <text x="50" y="58" textAnchor="middle" fill="currentColor"
-          style={{ fontFamily: "var(--f-display)", fontSize: 32, fontStyle: "italic" }}>R</text>
-      </svg>
+      <img src="./rad-logo.jpg" alt="RAD logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
     );
   }
-  // MTLH — geometric hex with a slash
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: "block" }}>
-      <polygon points="50,15 80,32 80,68 50,85 20,68 20,32" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <polygon points="50,28 67,38 67,62 50,72 33,62 33,38" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
-      <text x="50" y="58" textAnchor="middle" fill="currentColor"
-        style={{ fontFamily: "var(--f-display)", fontSize: 26, fontWeight: 600 }}>M</text>
-    </svg>
-  );
+  if (guild === "mtlh") {
+    return (
+      <img src="./mtlh-logo.jpg" alt="MTLH logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
+    );
+  }
+  
+  return null;
 }
 
 // ===== Badge components =====
