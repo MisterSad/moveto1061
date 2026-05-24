@@ -78,9 +78,10 @@ function App() {
   const navRole = useMemo(() => {
     if (role === "visitor") return "visitor";
     if (role === "player_new" || role === "player") return "player";
+    if (role === "super") return "super";
+    if (profile?.is_prince || profile?.is_recruiter) return "prince";
     if (role.startsWith("rad")) return "rad_r5";
     if (role.startsWith("mtlh")) return "mtlh_r5";
-    if (role === "super" || profile?.is_prince || profile?.is_recruiter) return "super";
     return "visitor";
   }, [role, profile]);
 
@@ -118,7 +119,8 @@ function App() {
       <Route path="/apply" element={!session ? <Navigate to="/profile" replace /> : <ApplyScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setRoute={setRoute} />} />
       <Route path="/player" element={<PlayerDashboard t={t} lang={lang} session={session} profile={profile} />} />
       <Route path="/admin" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} isSuper={role === "super" || profile?.is_prince || profile?.is_recruiter} />} />
-      <Route path="/super" element={<SuperAdminScreen t={t} lang={lang} isPrince={role === "super"} profile={profile} />} />
+      <Route path="/prince" element={<PrinceDashboardScreen t={t} lang={lang} />} />
+      <Route path="/system" element={<SystemAdminScreen t={t} lang={lang} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -127,10 +127,16 @@ function TopBar({ route, setRoute, role, lang, setLang, t, onLogout, selfName })
     navs.push({ k: "landing", label: t("nav_landing") });
     navs.push({ k: "admin", label: t("nav_admin") });
     if (role === "mtlh_r5") navs.push({ k: "guild_settings", label: t("nav_guild_settings") });
+  } else if (role === "prince") {
+    navs.push({ k: "landing", label: t("nav_landing") });
+    navs.push({ k: "admin", label: t("nav_admin") });
+    navs.push({ k: "prince", label: "Prince View" });
   } else if (role === "super") {
     navs.push({ k: "landing", label: t("nav_landing") });
     navs.push({ k: "admin", label: t("nav_admin") });
-    navs.push({ k: "super", label: t("nav_super") });
+    navs.push({ k: "prince", label: "Prince View" });
+    navs.push({ k: "guild_settings", label: t("nav_guild_settings") });
+    navs.push({ k: "system", label: "System Admin" });
   }
 
   function go(k) { setRoute(k); setOpen(false); }

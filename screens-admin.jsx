@@ -360,18 +360,14 @@ function KvItem({ k, v, mono, accent }) {
 }
 
 // ============================================================
-// SUPER ADMIN DASHBOARD
+// PRINCE DASHBOARD
 // ============================================================
-function SuperAdminScreen({ t, lang, isPrince }) {
+function PrinceDashboardScreen({ t, lang }) {
   const [applicants, setApplicants] = _ps([]);
-  const [team, setTeam] = _ps([]);
 
   function fetchAll() {
     window.supabaseClient.from('applications').select('*').then(({ data }) => {
       if (data) setApplicants(data);
-    });
-    window.supabaseClient.from('profiles').select('*').neq('role', 'player_new').then(({ data }) => {
-      if (data) setTeam(data.filter(u => u.role !== 'player')); // Filter out regular players to show only officers/super
     });
   }
 
@@ -391,7 +387,7 @@ function SuperAdminScreen({ t, lang, isPrince }) {
 
   return (
     <main className="container container--wide">
-      <div className="eyebrow">{t("super_title")}</div>
+      <div className="eyebrow">Prince View</div>
       <h1 className="display" style={{ fontSize: 44, marginTop: 8 }}>Consolidated view</h1>
       <div className="hairline hairline--gold"></div>
 
@@ -435,52 +431,70 @@ function SuperAdminScreen({ t, lang, isPrince }) {
         ))}
       </div>
 
-      {isPrince && (
-        <>
-          <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 8 }}>Team management</h2>
-          <p className="subtle" style={{ marginBottom: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
-          <div className="card">
-            <div className="team-list__head row row--between" style={{ padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
-              <div style={{ flex: 1 }}>Member</div>
-              <div style={{ width: 150 }}>Base Role</div>
-              <div style={{ width: 100, textAlign: "center" }}>Prince?</div>
-              <div style={{ width: 100, textAlign: "center" }}>Recruiter?</div>
-            </div>
-            {team.map(m => (
-               <div key={m.id} className="row row--between" style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
-                  <div style={{ flex: 1 }}>
-                    <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
-                  </div>
-                  <div style={{ width: 150 }}>
-                    <select className="select" style={{ padding: "4px 8px", fontSize: 13 }} value={m.role} onChange={(e) => {
-                      window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchAll());
-                    }}>
-                      <option value="player">Player</option>
-                      <option value="rad_r4">RAD R4</option>
-                      <option value="rad_r5">RAD R5</option>
-                      <option value="mtlh_r4">MTLH R4</option>
-                      <option value="mtlh_r5">MTLH R5</option>
-                      <option value="super">Admin</option>
-                    </select>
-                  </div>
-                  <div style={{ width: 100, textAlign: "center" }}>
-                    <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
-                      window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchAll());
-                    }} />
-                  </div>
-                  <div style={{ width: 100, textAlign: "center" }}>
-                    <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
-                      window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchAll());
-                    }} />
-                  </div>
-               </div>
-            ))}
-          </div>
-        </>
-      )}
-
       <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 24 }}>{t("roster_title")}</h2>
       <RosterGrid applicants={applicants.filter(a => a.status === "accepted")} t={t} lang={lang} />
+    </main>
+  );
+}
+
+// ============================================================
+// SYSTEM ADMIN DASHBOARD
+// ============================================================
+function SystemAdminScreen({ t, lang }) {
+  const [team, setTeam] = _ps([]);
+
+  function fetchTeam() {
+    window.supabaseClient.from('profiles').select('*').neq('role', 'player_new').then(({ data }) => {
+      if (data) setTeam(data.filter(u => u.role !== 'player')); // Filter out regular players to show only officers/super
+    });
+  }
+
+  _pe(() => { fetchTeam(); }, []);
+
+  return (
+    <main className="container container--wide">
+      <div className="eyebrow">System Admin</div>
+      <h1 className="display" style={{ fontSize: 44, marginTop: 8 }}>Team management</h1>
+      <div className="hairline hairline--gold"></div>
+      
+      <p className="subtle" style={{ marginBottom: 24, marginTop: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
+      <div className="card">
+        <div className="team-list__head row row--between" style={{ padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
+          <div style={{ flex: 1 }}>Member</div>
+          <div style={{ width: 150 }}>Base Role</div>
+          <div style={{ width: 100, textAlign: "center" }}>Prince?</div>
+          <div style={{ width: 100, textAlign: "center" }}>Recruiter?</div>
+        </div>
+        {team.map(m => (
+           <div key={m.id} className="row row--between" style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
+              </div>
+              <div style={{ width: 150 }}>
+                <select className="select" style={{ padding: "4px 8px", fontSize: 13 }} value={m.role} onChange={(e) => {
+                  window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchTeam());
+                }}>
+                  <option value="player">Player</option>
+                  <option value="rad_r4">RAD R4</option>
+                  <option value="rad_r5">RAD R5</option>
+                  <option value="mtlh_r4">MTLH R4</option>
+                  <option value="mtlh_r5">MTLH R5</option>
+                  <option value="super">Admin</option>
+                </select>
+              </div>
+              <div style={{ width: 100, textAlign: "center" }}>
+                <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
+                  window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                }} />
+              </div>
+              <div style={{ width: 100, textAlign: "center" }}>
+                <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
+                  window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                }} />
+              </div>
+           </div>
+        ))}
+      </div>
     </main>
   );
 }
@@ -519,4 +533,4 @@ function RosterGrid({ applicants, t, lang }) {
   );
 }
 
-Object.assign(window, { PlayerDashboard, AdminDashboard, SuperAdminScreen, RosterGrid });
+Object.assign(window, { PlayerDashboard, AdminDashboard, PrinceDashboardScreen, SystemAdminScreen, RosterGrid });
