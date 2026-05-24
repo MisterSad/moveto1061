@@ -1,61 +1,65 @@
 // Chat component — used in both player dashboard and admin detail view.
-// Participants = R5/R4 of the applicant's guild + the applicant.
 
 const { useState: cuState, useEffect: cuEffect, useRef: cuRef, useMemo: cuMemo } = React;
 
-function ChatPanel({ applicant, currentUserId, t, lang, onVote, onSend }) {
-  const data = window.MOCK_DATA;
-  const members = data.membersOf(applicant.guild);
-  const participants = [
-    ...members,
-    { id: applicant.id, ign: applicant.ign, role: "Applicant", color: applicant.guild },
-  ];
-  const memberMap = useMemo(() => {
-    const m = {};
-    members.forEach(x => m[x.id] = x);
-    m[applicant.id] = { id: applicant.id, ign: applicant.ign, role: "Applicant", color: applicant.guild };
-    return m;
-  }, [applicant.id]);
-
-  const messages = applicant.chat || [];
+function ChatPanel({ applicant, currentUserId, t, lang }) {
+  const [messages, setMessages] = cuState([]);
   const [draft, setDraft] = cuState("");
-  const [typing, setTyping] = cuState(false);   // someone else typing (simulated)
   const scrollerRef = cuRef(null);
+
+  function fetchChat() {
+    window.supabaseClient.from('messages')
+      .select('*, profiles(ign, role, guild), votes(user_id, choice)')
+      .eq('application_id', applicant.id).order('created_at', { ascending: true })
+      .then(({ data }) => { if (data) setMessages(data); });
+  }
+
+  cuEffect(() => {
+    fetchChat();
+    const ch = window.supabaseClient.channel('chat-' + applicant.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `application_id=eq.${applicant.id}` }, () => fetchChat())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => fetchChat())
+      .subscribe();
+    return () => { window.supabaseClient.removeChannel(ch); };
+  }, [applicant.id]);
 
   cuEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
-  }, [messages.length, typing]);
-
-  // Simulate a typing indicator that comes and goes
-  cuEffect(() => {
-    let cancel = false;
-    const cycle = () => {
-      if (cancel) return;
-      const isAdmin = currentUserId.startsWith("u_");
-      // pretend the *other* side is typing once every ~12s
-      setTimeout(() => {
-        if (cancel) return;
-        setTyping(true);
-        setTimeout(() => { if (!cancel) setTyping(false); }, 2400);
-        cycle();
-      }, 8000 + Math.random() * 6000);
-    };
-    cycle();
-    return () => { cancel = true; };
-  }, [applicant.id, currentUserId]);
+  }, [messages.length]);
 
   function send() {
     if (!draft.trim()) return;
-    onSend(applicant.id, { id: "m" + Date.now(), authorId: currentUserId, text: draft.trim(), ts: new Date().toISOString() });
-    setDraft("");
+    window.supabaseClient.from('messages').insert({
+      application_id: applicant.id,
+      author_id: currentUserId,
+      type: 'chat',
+      text: draft.trim()
+    }).then(() => { setDraft(""); });
+  }
+
+  function startVote() {
+    window.supabaseClient.from('messages').insert({
+      application_id: applicant.id,
+      author_id: currentUserId,
+      type: 'vote',
+      question: 'Accept ' + applicant.ign + '?'
+    });
+  }
+
+  function onVote(messageId, choice) {
+    window.supabaseClient.from('votes').upsert({
+      message_id: messageId,
+      user_id: currentUserId,
+      choice
+    }).then(() => fetchChat());
   }
 
   // Group messages by day
-  const grouped = useMemo(() => {
+  const grouped = cuMemo(() => {
     const groups = [];
     let lastDay = "";
     messages.forEach(m => {
-      const day = m.ts ? m.ts.slice(0, 10) : "";
+      const day = m.created_at ? m.created_at.slice(0, 10) : "";
       if (day !== lastDay) {
         groups.push({ day, items: [] });
         lastDay = day;
@@ -65,6 +69,12 @@ function ChatPanel({ applicant, currentUserId, t, lang, onVote, onSend }) {
     return groups;
   }, [messages]);
 
+  // Is current user an admin? 
+  // We can guess based on if they have a role other than player_new/player
+  // But wait, the current user role isn't passed here directly. We know they are admin if they are not the applicant
+  // Actually, we can check if they are the applicant.
+  const isApplicant = currentUserId === applicant.user_id;
+
   return (
     <div className="chat">
       <div className="chat__head">
@@ -72,14 +82,12 @@ function ChatPanel({ applicant, currentUserId, t, lang, onVote, onSend }) {
           <div>
             <div className="chat__title">{t("internal_chat")}</div>
             <div className="chat__sub">
-              {t("chat_with")} — {participants.map(p => p.ign).join(" · ")}
+              {t("chat_with")} — {applicant.ign} {isApplicant ? "" : "& Officers"}
             </div>
           </div>
-          <div className="chat__participants" title={participants.map(p => p.ign).join(", ")}>
-            {participants.slice(0, 5).map(p => (
-              <Avatar key={p.id} name={p.ign} guild={p.color} />
-            ))}
-          </div>
+          {!isApplicant && (
+             <button className="btn btn--ghost btn--sm" onClick={startVote}>Open Vote</button>
+          )}
         </div>
       </div>
 
@@ -91,27 +99,20 @@ function ChatPanel({ applicant, currentUserId, t, lang, onVote, onSend }) {
         )}
         {grouped.map((g, gi) => (
           <React.Fragment key={gi}>
-            <div className="chat__day">{window.FMT.dayLabel(g.day, lang)}</div>
+            <div className="chat__day">{window.FMT?.dayLabel ? window.FMT.dayLabel(g.day, lang) : g.day}</div>
             {g.items.map(m => (
               <ChatMessage
                 key={m.id}
                 msg={m}
-                memberMap={memberMap}
-                isSelf={m.authorId === currentUserId}
+                isSelf={m.author_id === currentUserId}
+                isAdmin={!isApplicant}
                 t={t} lang={lang}
-                onVote={(v) => onVote(applicant.id, m.id, v, currentUserId)}
+                onVote={(v) => onVote(m.id, v)}
                 currentUserId={currentUserId}
               />
             ))}
           </React.Fragment>
         ))}
-        {typing && (
-          <div className="typing">
-            <Avatar name={applicant.id === currentUserId ? participants[0].ign : applicant.ign} size="sm" />
-            <span className="typing__dots"><span></span><span></span><span></span></span>
-            <span>{applicant.id === currentUserId ? participants[0].ign : applicant.ign} {t("typing")}…</span>
-          </div>
-        )}
       </div>
 
       <div className="chat__composer">
@@ -132,20 +133,25 @@ function ChatPanel({ applicant, currentUserId, t, lang, onVote, onSend }) {
   );
 }
 
-function ChatMessage({ msg, memberMap, isSelf, t, lang, onVote, currentUserId }) {
+function ChatMessage({ msg, isSelf, isAdmin, t, lang, onVote, currentUserId }) {
   if (msg.type === "system") {
     return (
       <div className="msg is-system" style={{ justifyContent: "center" }}>
         <div className="msg__bubble" style={{ borderRadius: 999, padding: "6px 16px" }}>
-          {msg.text} · {window.FMT.time(msg.ts, lang)}
+          {msg.text} · {window.FMT?.time ? window.FMT.time(msg.created_at, lang) : msg.created_at}
         </div>
       </div>
     );
   }
   if (msg.type === "vote") {
-    const v = msg.votes || { yes: [], no: [], abstain: [] };
+    const rawVotes = msg.votes || [];
+    const v = {
+      yes: rawVotes.filter(x => x.choice === 'yes').map(x => x.user_id),
+      no: rawVotes.filter(x => x.choice === 'no').map(x => x.user_id),
+      abstain: rawVotes.filter(x => x.choice === 'abstain').map(x => x.user_id)
+    };
     const myVote = ["yes", "no", "abstain"].find(k => v[k]?.includes(currentUserId));
-    const isAdmin = currentUserId.startsWith("u_");
+    
     return (
       <div className="msg is-vote">
         <div className="msg__bubble" style={{ maxWidth: 520 }}>
@@ -154,7 +160,7 @@ function ChatMessage({ msg, memberMap, isSelf, t, lang, onVote, currentUserId })
               <div className="eyebrow">{lang === "fr" ? "Vote ouvert" : "Vote open"}</div>
               <div style={{ fontFamily: "var(--f-display)", fontSize: 18, marginTop: 4 }}>{msg.question}</div>
             </div>
-            <span className="mono" style={{ fontSize: 11, color: "var(--ink-mute)" }}>{window.FMT.time(msg.ts, lang)}</span>
+            <span className="mono" style={{ fontSize: 11, color: "var(--ink-mute)" }}>{window.FMT?.time ? window.FMT.time(msg.created_at, lang) : msg.created_at}</span>
           </div>
           <div className="row" style={{ gap: 16, fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--ink-dim)" }}>
             <span>↑ {(v.yes || []).length} {t("vote_yes")}</span>
@@ -177,19 +183,19 @@ function ChatMessage({ msg, memberMap, isSelf, t, lang, onVote, currentUserId })
       </div>
     );
   }
-  const author = memberMap[msg.authorId]
-    || (window.MOCK_DATA.memberById && window.MOCK_DATA.memberById(msg.authorId))
-    || { ign: "Unknown", role: "" };
-  const isApplicant = msg.authorId && !msg.authorId.startsWith("u_");
+  
+  const author = msg.profiles || { ign: "Unknown", role: "", guild: null };
+  const isApplicantMsg = author.role === "player" || author.role === "player_new";
+
   return (
     <div className={`msg ${isSelf ? "is-self" : ""}`}>
-      <Avatar name={author.ign} guild={isApplicant ? author.color : author.color} />
+      <Avatar name={author.ign} guild={author.guild} />
       <div>
         <div className="msg__head" style={isSelf ? { justifyContent: "flex-end" } : {}}>
           <span className="msg__name">{author.ign}</span>
-          {!isApplicant && <span className="msg__role" style={{ color: "var(--gold)" }}>· {author.role}</span>}
-          {isApplicant && <span className="msg__role" style={{ color: "var(--ink-mute)" }}>· {lang === "fr" ? "Candidat" : "Applicant"}</span>}
-          <span className="msg__time">{window.FMT.time(msg.ts, lang)}</span>
+          {!isApplicantMsg && <span className="msg__role" style={{ color: "var(--gold)" }}>· {author.role}</span>}
+          {isApplicantMsg && <span className="msg__role" style={{ color: "var(--ink-mute)" }}>· {lang === "fr" ? "Candidat" : "Applicant"}</span>}
+          <span className="msg__time">{window.FMT?.time ? window.FMT.time(msg.created_at, lang) : msg.created_at}</span>
         </div>
         <div className="msg__bubble">{msg.text}</div>
       </div>

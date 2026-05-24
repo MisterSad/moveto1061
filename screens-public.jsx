@@ -72,18 +72,18 @@ function LandingScreen({ t, lang, setRoute, role, guildSettings }) {
 
 function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
   const s = settings || {};
-  const reqs = (lang === "fr" ? s.req : s.reqEn) || [];
-  const pitch = (lang === "fr" ? s.pitch : s.pitchEn) || "";
+  const reqs = (lang === "fr" ? s.req : s.req_en) || [];
+  const pitch = (lang === "fr" ? s.pitch : s.pitch_en) || "";
   const data = guild === "rad"
     ? {
         name: "RAD · The Radiant",
-        members: s.members ?? 47, avg: s.avgPower ?? "73M", slots: s.slots ?? 8,
+        members: s.members ?? 47, avg: s.avg_power ?? "73M", slots: s.slots ?? 8,
         motto: t("rad_motto"),
         pitch, reqs,
       }
     : {
         name: "MTLH · Metalheads",
-        members: s.members ?? 52, avg: s.avgPower ?? "58M", slots: s.slots ?? 12,
+        members: s.members ?? 52, avg: s.avg_power ?? "58M", slots: s.slots ?? 12,
         motto: t("mtlh_motto"),
         pitch, reqs,
       };
@@ -140,31 +140,19 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
 }
 
 // ============================================================
-// LOGIN (mock Discord OAuth + staff login)
+// LOGIN 
 // ============================================================
-function LoginScreen({ t, lang, login, staffLogin }) {
-  // demo accounts
-  const accounts = [
-    { id: "demo_new", name: "Nouveau joueur", desc: lang === "fr" ? "Test du flow complet (sans profil)" : "Full flow test (no profile)", role: "player_new" },
-    { id: "demo_player", name: "Ophelya (RAD applicant)", desc: lang === "fr" ? "Candidature en discussion" : "Application under review", role: "player_applicant", applicantId: "a_001" },
-    { id: "demo_rad", name: "Heliax (R4 RAD)", desc: lang === "fr" ? "Officier de RAD" : "RAD officer", role: "rad_r4" },
-    { id: "demo_mtlh", name: "Ironclad (R5 MTLH)", desc: lang === "fr" ? "Chef de MTLH" : "MTLH leader", role: "mtlh_r5" },
-    { id: "demo_super", name: "Vortexa (R5 RAD + Prince)", desc: lang === "fr" ? "Toi — Prince du site" : "You — site Prince", role: "super" },
-  ];
+function LoginScreen({ t, lang, session, setRoute }) {
+  if (session) {
+    setRoute("profile");
+    return null;
+  }
 
-  const [staffIgn, setStaffIgn] = _useState("");
-  const [staffPwd, setStaffPwd] = _useState("");
-  const [staffErr, setStaffErr] = _useState("");
-
-  function trySignIn(e) {
-    e?.preventDefault?.();
-    setStaffErr("");
-    if (!staffIgn.trim() || !staffPwd.trim()) {
-      setStaffErr("Enter your in-game name and password.");
-      return;
-    }
-    const ok = staffLogin(staffIgn, staffPwd);
-    if (!ok) setStaffErr("No staff account matches these credentials.");
+  async function signIn() {
+    await window.supabaseClient.auth.signInWithOAuth({
+      provider: 'discord',
+      options: { redirectTo: window.location.origin + '/profile' }
+    });
   }
 
   return (
@@ -180,48 +168,10 @@ function LoginScreen({ t, lang, login, staffLogin }) {
         </div>
 
         <button className="btn btn--discord" style={{ width: "100%", marginTop: 24, justifyContent: "center" }}
-          onClick={() => window.location.href = '/api/auth/discord'}>
+          onClick={signIn}>
           <svg width="20" height="15" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.6 58.6 0 0 0 45.4.5l-.6 1.4a54 54 0 0 0-12.9 0L31.3.5c-5 .8-10 2.3-14.6 4.4C7.5 18.8 5 32.3 6.3 45.6a59 59 0 0 0 17.7 8.9l1.5-2c-2.4-.9-4.7-2-7-3.4l1.7-1.4a42 42 0 0 0 35.7 0l1.7 1.4c-2.2 1.3-4.5 2.5-7 3.4l1.5 2a59 59 0 0 0 17.7-8.9c1.4-15.3-2.4-28.6-9.7-40.7Zm-35.7 33c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.5 3.2 6.4 7.1 0 4-2.9 7.2-6.4 7.2Zm22.2 0c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.4 3.2 6.4 7.1 0 4-2.8 7.2-6.4 7.2Z"/></svg>
           {t("login_cta")}
         </button>
-
-        {/* Staff sign-in */}
-        <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--line-soft)" }}>
-          <div className="row row--between" style={{ alignItems: "baseline" }}>
-            <div className="eyebrow eyebrow--mute">Staff sign-in</div>
-            <span className="mono faint" style={{ fontSize: 10.5, letterSpacing: "0.12em" }}>R5 · R4 · RECRUITER · PRINCE</span>
-          </div>
-          <p className="subtle" style={{ fontSize: 12, marginTop: 6 }}>
-            Use the credentials your Prince shared with you when your account was created.
-          </p>
-          <form onSubmit={trySignIn} className="col col--gap4" style={{ marginTop: 16 }}>
-            <Field label="In-game name" required>
-              <input className="input" value={staffIgn} onChange={e => setStaffIgn(e.target.value)} placeholder="Vortexa" autoComplete="username" />
-            </Field>
-            <Field label="Password" required error={staffErr}>
-              <input className="input mono" type="password" value={staffPwd} onChange={e => setStaffPwd(e.target.value)} placeholder="••••••••••••••••" autoComplete="current-password" />
-            </Field>
-            <button type="submit" className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }}>Sign in</button>
-          </form>
-        </div>
-
-        <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--line-soft)" }}>
-          <div className="eyebrow eyebrow--mute">{t("login_pick_account")}</div>
-          <p className="subtle" style={{ fontSize: 12, marginTop: 6 }}>{t("login_disclaimer")}</p>
-          <div className="col" style={{ marginTop: 16, gap: 8 }}>
-            {accounts.map(a => (
-              <button key={a.id} className="btn btn--ghost"
-                style={{ justifyContent: "space-between", width: "100%", padding: "14px 16px", textTransform: "none", letterSpacing: 0 }}
-                onClick={() => login(a)}>
-                <span style={{ textAlign: "left" }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{a.name}</div>
-                  <div className="subtle" style={{ fontSize: 12, marginTop: 2, fontWeight: 400 }}>{a.desc}</div>
-                </span>
-                <span style={{ color: "var(--gold)" }}>→</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </main>
   );
@@ -230,22 +180,29 @@ function LoginScreen({ t, lang, login, staffLogin }) {
 // ============================================================
 // PROFILE CREATION
 // ============================================================
-function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
+function ProfileScreen({ t, lang, session, profile, setProfile, draftApp, setDraftApp, setRoute }) {
+  _useEffect(() => {
+    // If the user is an officer, redirect them to admin immediately
+    if (profile && profile.role !== 'player_new' && profile.role !== 'player') {
+      setRoute("admin");
+    }
+  }, [profile]);
+
   const [form, setForm] = _useState(() => {
-    if (profile) return profile;
     const initial = { ign: "", uid: "", server: "", power: "", timezone: "", language: "", discord: "", motivation: "" };
     try {
-      const dUser = JSON.parse(localStorage.getItem('radmtlh_discordUser'));
-      if (dUser && dUser.username) {
-        initial.discord = dUser.username + (dUser.discriminator && dUser.discriminator !== "0" ? "#" + dUser.discriminator : "");
+      if (session?.user?.user_metadata?.custom_claims?.global_name) {
+        initial.discord = session.user.user_metadata.custom_claims.global_name;
       }
     } catch(e) {}
-    return initial;
+    return { ...initial, ...draftApp, ign: profile?.ign || draftApp.ign || "", discord: profile?.discord_tag || draftApp.discord || initial.discord };
   });
   const [errors, setErrors] = _useState({});
+  const [saving, setSaving] = _useState(false);
 
   function update(k, v) { setForm(f => ({ ...f, [k]: v })); }
-  function submit() {
+  
+  async function submit() {
     const e = {};
     if (!form.ign) e.ign = lang === "fr" ? "Requis" : "Required";
     if (!form.uid) e.uid = lang === "fr" ? "Requis" : "Required";
@@ -253,9 +210,23 @@ function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
     if (!form.power) e.power = lang === "fr" ? "Requis" : "Required";
     if (!form.discord) e.discord = lang === "fr" ? "Requis" : "Required";
     setErrors(e);
-    if (Object.keys(e).length === 0) {
-      setProfile(form);
+    if (Object.keys(e).length > 0) return;
+
+    setSaving(true);
+    const { error } = await window.supabaseClient.from('profiles').upsert({
+      id: session.user.id,
+      ign: form.ign,
+      role: profile?.role || 'player_new',
+      discord_tag: form.discord
+    });
+
+    setSaving(false);
+    if (!error) {
+      setProfile(prev => ({ ...prev, id: session.user.id, ign: form.ign, role: profile?.role || 'player_new', discord_tag: form.discord }));
+      setDraftApp(form);
       setRoute("apply");
+    } else {
+      alert("Error saving profile: " + error.message);
     }
   }
 
@@ -286,7 +257,7 @@ function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
               placeholder="S-3914" />
           </Field>
           <Field label={t("f_power")} required hint={lang === "fr" ? "ex. 65000000" : "e.g. 65000000"} error={errors.power}>
-            <input className="input mono" value={form.power} onChange={e => update("power", e.target.value)}
+            <input className="input mono" type="number" value={form.power} onChange={e => update("power", e.target.value)}
               placeholder="65000000" />
           </Field>
           <Field label={t("f_timezone")}>
@@ -311,7 +282,9 @@ function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
         </div>
 
         <div className="row row--end" style={{ marginTop: 28 }}>
-          <button className="btn btn--primary btn--lg" onClick={submit}>{t("save_continue")} →</button>
+          <button className="btn btn--primary btn--lg" disabled={saving} onClick={submit}>
+            {saving ? "..." : t("save_continue") + " →"}
+          </button>
         </div>
       </div>
     </main>
@@ -321,19 +294,47 @@ function ProfileScreen({ t, lang, profile, setProfile, setRoute }) {
 // ============================================================
 // APPLY — guild picker
 // ============================================================
-function ApplyScreen({ t, lang, profile, setApplication, setRoute }) {
+function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute }) {
   const [pick, setPick] = _useState(null);
-  function submit() {
-    if (!pick) return;
-    setApplication({
-      ...profile,
-      guild: pick,
-      status: "pending",
-      votes: { yes: [], no: [], abstain: [] },
-      submittedAt: new Date().toISOString(),
+  const [saving, setSaving] = _useState(false);
+
+  // If already applied, redirect to dashboard
+  _useEffect(() => {
+    window.supabaseClient.from('applications').select('id').eq('user_id', session.user.id).then(({ data }) => {
+      if (data && data.length > 0) setRoute("player");
     });
-    setRoute("player");
+  }, []);
+
+  async function submit() {
+    if (!pick || !draftApp) return;
+    setSaving(true);
+    
+    // Create Application
+    const { error: appError } = await window.supabaseClient.from('applications').insert({
+      user_id: session.user.id,
+      uid: draftApp.uid,
+      server: draftApp.server,
+      power: parseInt(draftApp.power) || 0,
+      timezone: draftApp.timezone,
+      language: draftApp.language,
+      discord: draftApp.discord,
+      motivation: draftApp.motivation,
+      guild: pick,
+      status: "pending"
+    });
+
+    if (!appError) {
+      if (profile.role === 'player_new') {
+        await window.supabaseClient.from('profiles').update({ role: 'player' }).eq('id', session.user.id);
+        setProfile(prev => ({ ...prev, role: 'player' }));
+      }
+      setRoute("player");
+    } else {
+      alert("Error submitting application: " + appError.message);
+    }
+    setSaving(false);
   }
+
   return (
     <main className="container container--narrow">
       <Stepper steps={[
@@ -371,20 +372,20 @@ function ApplyScreen({ t, lang, profile, setApplication, setRoute }) {
         <div className="grid-resp-4" style={{ gap: 16, marginTop: 16 }}>
           <div>
             <div className="kv__k">{t("f_ign")}</div>
-            <div style={{ marginTop: 4 }}>{profile.ign}</div>
+            <div style={{ marginTop: 4 }}>{draftApp?.ign || profile?.ign}</div>
           </div>
           <div>
             <div className="kv__k">{t("f_uid")}</div>
-            <div className="mono" style={{ marginTop: 4, fontSize: 13 }}>{profile.uid}</div>
+            <div className="mono" style={{ marginTop: 4, fontSize: 13 }}>{draftApp?.uid}</div>
           </div>
           <div>
             <div className="kv__k">{t("f_server")}</div>
-            <div className="mono" style={{ marginTop: 4, fontSize: 13 }}>{profile.server}</div>
+            <div className="mono" style={{ marginTop: 4, fontSize: 13 }}>{draftApp?.server}</div>
           </div>
           <div>
             <div className="kv__k">{t("f_power")}</div>
             <div style={{ marginTop: 4, color: "var(--gold)", fontFamily: "var(--f-display)", fontSize: 20 }}>
-              {window.FMT.power(parseInt(profile.power) || 0)}
+              {window.FMT?.power ? window.FMT.power(parseInt(draftApp?.power) || 0) : draftApp?.power}
             </div>
           </div>
         </div>
@@ -392,8 +393,8 @@ function ApplyScreen({ t, lang, profile, setApplication, setRoute }) {
 
       <div className="row row--between mt-8">
         <button className="btn btn--ghost" onClick={() => setRoute("profile")}>← {lang === "fr" ? "Modifier le profil" : "Edit profile"}</button>
-        <button className="btn btn--primary btn--lg" disabled={!pick} onClick={submit}>
-          {t("apply_submit")} →
+        <button className="btn btn--primary btn--lg" disabled={!pick || saving} onClick={submit}>
+          {saving ? "..." : t("apply_submit") + " →"}
         </button>
       </div>
     </main>

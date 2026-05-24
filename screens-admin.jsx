@@ -7,7 +7,31 @@ const _pm = React.useMemo;
 // ============================================================
 // PLAYER DASHBOARD
 // ============================================================
-function PlayerDashboard({ t, lang, applicant, onSend, onVote }) {
+function PlayerDashboard({ t, lang, session, profile }) {
+  const [applicant, setApplicant] = _ps(null);
+  const [loading, setLoading] = _ps(true);
+
+  _pe(() => {
+    if (session?.user?.id) {
+      window.supabaseClient.from('applications').select('*').eq('user_id', session.user.id)
+        .order('submitted_at', { ascending: false }).limit(1).single()
+        .then(({ data, error }) => {
+          if (data) {
+             setApplicant({ ...data, ign: profile?.ign, discord: profile?.discord_tag });
+          }
+          setLoading(false);
+        });
+        
+      // Subscribe
+      const channel = window.supabaseClient.channel('player-app')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `user_id=eq.${session.user.id}` }, payload => {
+           setApplicant(prev => ({ ...prev, ...payload.new }));
+        }).subscribe();
+      return () => { window.supabaseClient.removeChannel(channel); }
+    }
+  }, [session, profile]);
+
+  if (loading) return <main className="container"><div className="empty">Loading...</div></main>;
   if (!applicant) {
     return (
       <main className="container">
@@ -15,6 +39,7 @@ function PlayerDashboard({ t, lang, applicant, onSend, onVote }) {
       </main>
     );
   }
+
   return (
     <main className="container">
       <div className="row row--between" style={{ marginBottom: 24 }}>
@@ -34,32 +59,17 @@ function PlayerDashboard({ t, lang, applicant, onSend, onVote }) {
           <div className="card__head">
             <div className="card__title">{lang === "fr" ? "Ton profil candidat" : "Your candidate profile"}</div>
             <span className="mono" style={{ fontSize: 11, color: "var(--ink-mute)" }}>
-              {lang === "fr" ? "Soumis le " : "Submitted "} {window.FMT.date(applicant.submittedAt, lang)}
+              {lang === "fr" ? "Soumis le " : "Submitted "} {window.FMT.date(applicant.submitted_at, lang)}
             </span>
           </div>
           <ProfileKV applicant={applicant} t={t} lang={lang} />
-
-          {applicant.status === "review" && (
-            <div className="mt-6" style={{ padding: 16, background: "var(--bg-1)", borderRadius: 8, border: "1px dashed var(--line)" }}>
-              <div className="eyebrow eyebrow--mute">{lang === "fr" ? "Votes en cours" : "Live votes"}</div>
-              <div style={{ marginTop: 12 }}>
-                <VotePills votes={applicant.votes} />
-              </div>
-              <p className="subtle" style={{ fontSize: 13, marginTop: 12 }}>
-                {lang === "fr"
-                  ? "Les officiers de la guilde votent ci-dessous. Tu peux échanger avec eux directement dans le chat."
-                  : "The guild officers are voting below. You can chat with them directly."}
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="chat-mobile-fill" style={{ height: 600 }}>
           <ChatPanel
             applicant={applicant}
-            currentUserId={applicant.id}
+            currentUserId={session?.user?.id}
             t={t} lang={lang}
-            onSend={onSend} onVote={onVote}
           />
         </div>
       </div>
@@ -75,7 +85,7 @@ function ProfileKV({ applicant, t, lang }) {
       <div className="kv"><span className="kv__k">{t("f_server")}</span><span className="kv__v mono">{applicant.server}</span></div>
       <div className="kv"><span className="kv__k">{t("f_power")}</span>
         <span className="kv__v" style={{ color: "var(--gold)", fontFamily: "var(--f-display)", fontSize: 20 }}>
-          {window.FMT.power(parseInt(applicant.power) || 0)}
+          {window.FMT?.power ? window.FMT.power(parseInt(applicant.power) || 0) : applicant.power}
         </span>
       </div>
       <div className="kv"><span className="kv__k">{t("f_timezone")}</span><span className="kv__v">{applicant.timezone || "—"}</span></div>
@@ -90,21 +100,44 @@ function ProfileKV({ applicant, t, lang }) {
 }
 
 // ============================================================
-// ADMIN DASHBOARD (R5/R4 of one guild) — 3-column fixed layout
-// Fills the viewport: no outer scroll. Each column has its own
-// internal scroll when needed. Chat is always visible on desktop.
+// ADMIN DASHBOARD
 // ============================================================
-function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStatus, onSend, onVote, isSuper }) {
+function AdminDashboard({ t, lang, role, currentUserId, isSuper }) {
   const myGuild =
     role === "rad_r5" || role === "rad_r4" ? "rad"
     : role === "mtlh_r5" || role === "mtlh_r4" ? "mtlh"
     : null;
 
+  const [applicants, setApplicants] = _ps([]);
   const [guildFilter, setGuildFilter] = _ps(myGuild || "rad");
   const [tab, setTab] = _ps("pending");
   const [selectedId, setSelectedId] = _ps(null);
-  // Mobile column toggle: "list" | "detail" | "chat"
   const [mobileView, setMobileView] = _ps("list");
+
+  function fetchApplicants() {
+    window.supabaseClient.from('applications')
+      .select('*, profiles(ign, discord_tag)')
+      .order('submitted_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (data) {
+          setApplicants(data.map(a => ({
+            ...a,
+            ign: a.profiles?.ign || 'Unknown',
+            discord: a.profiles?.discord_tag || 'Unknown',
+            votes: { yes: [], no: [], abstain: [] }
+          })));
+        }
+      });
+  }
+
+  _pe(() => {
+    fetchApplicants();
+    const channel = window.supabaseClient.channel('admin-applications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, payload => {
+        fetchApplicants();
+      }).subscribe();
+    return () => { window.supabaseClient.removeChannel(channel); };
+  }, []);
 
   const visibleAll = _pm(() => {
     if (isSuper) return applicants;
@@ -139,9 +172,12 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
 
   const selected = applicants.find(a => a.id === selectedId);
 
+  async function changeStatus(applicantId, status) {
+    await window.supabaseClient.from('applications').update({ status }).eq('id', applicantId);
+  }
+
   return (
     <div className="admin-fullview">
-      {/* Header bar */}
       <div className="admin-fullview__head">
         <div className="row" style={{ gap: 16, alignItems: "center", minWidth: 0, flex: 1 }}>
           <div style={{ minWidth: 0 }}>
@@ -156,7 +192,6 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
             </div>
           </div>
 
-          {/* Tabs inline */}
           <div className="admin-fullview__tabs">
             {[
               { k: "pending", l: t("tab_pending"), c: counts.pending },
@@ -180,7 +215,6 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
         )}
       </div>
 
-      {/* Mobile column switcher */}
       <div className="admin-fullview__mobiletabs">
         <button className={mobileView === "list" ? "is-active" : ""} onClick={() => setMobileView("list")}>
           List <span className="tabs__count">{filtered.length}</span>
@@ -193,9 +227,7 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
         </button>
       </div>
 
-      {/* 3-column body */}
       <div className={`admin-fullview__body view-${mobileView}`}>
-        {/* Col 1 — List */}
         <aside className="admin-col admin-col--list">
           {filtered.length === 0 ? (
             <div className="empty" style={{ padding: 32 }}>{t("no_candidates")}</div>
@@ -212,13 +244,12 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
           )}
         </aside>
 
-        {/* Col 2 — Profile */}
         <section className="admin-col admin-col--detail">
           {selected ? (
             <CandidateDetailCompact
               applicant={selected}
               t={t} lang={lang} role={role}
-              onChangeStatus={onChangeStatus}
+              onChangeStatus={changeStatus}
               onOpenChat={() => setMobileView("chat")}
             />
           ) : (
@@ -226,14 +257,12 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
           )}
         </section>
 
-        {/* Col 3 — Chat */}
         <section className="admin-col admin-col--chat">
           {selected ? (
             <ChatPanel
               applicant={selected}
               currentUserId={currentUserId}
               t={t} lang={lang}
-              onSend={onSend} onVote={onVote}
             />
           ) : (
             <div className="empty" style={{ padding: 32 }}>No active conversation</div>
@@ -244,26 +273,23 @@ function AdminDashboard({ t, lang, role, currentUserId, applicants, onChangeStat
   );
 }
 
-// Compact row used in the new fixed-height list column.
 function CandidateCompactRow({ a, t, active, onClick }) {
   return (
     <button className={`candidate-compact ${active ? "is-active" : ""}`} onClick={onClick}>
       <Avatar name={a.ign} guild={a.guild} />
       <div className="candidate-compact__main">
         <div className="candidate-compact__name">{a.ign}</div>
-        <div className="candidate-compact__sub mono">{a.server} · {window.FMT.power(a.power)}</div>
+        <div className="candidate-compact__sub mono">{a.server} · {window.FMT?.power ? window.FMT.power(a.power) : a.power}</div>
       </div>
       <div className="candidate-compact__right">
         <StatusBadge status={a.status} t={t} />
-        <div className="candidate-compact__votes"><VotePills votes={a.votes} /></div>
       </div>
     </button>
   );
 }
 
-// Compact profile for the middle column (no chat — chat is its own column).
 function CandidateDetailCompact({ applicant, t, lang, role, onChangeStatus, onOpenChat }) {
-  const isAdmin = role !== "player" && role !== "visitor";
+  const isAdmin = role !== "player" && role !== "visitor" && role !== "player_new";
   return (
     <div className="admin-detail-compact">
       <div className="admin-detail-compact__head">
@@ -281,7 +307,7 @@ function CandidateDetailCompact({ applicant, t, lang, role, onChangeStatus, onOp
         <div className="admin-detail-compact__kv">
           <KvItem k={t("f_uid")} v={applicant.uid} mono />
           <KvItem k={t("f_server")} v={applicant.server} mono />
-          <KvItem k={t("f_power")} v={window.FMT.power(parseInt(applicant.power) || 0)} accent />
+          <KvItem k={t("f_power")} v={window.FMT?.power ? window.FMT.power(parseInt(applicant.power) || 0) : applicant.power} accent />
           <KvItem k={t("f_timezone")} v={applicant.timezone || "—"} />
           <KvItem k={t("f_language")} v={applicant.language || "—"} />
           <KvItem k={t("f_discord")} v={applicant.discord} mono />
@@ -295,11 +321,6 @@ function CandidateDetailCompact({ applicant, t, lang, role, onChangeStatus, onOp
             </p>
           </div>
         )}
-
-        <div className="admin-detail-compact__votes">
-          <span className="kv__k">Votes</span>
-          <VotePills votes={applicant.votes} />
-        </div>
       </div>
 
       {isAdmin && (
@@ -339,15 +360,31 @@ function KvItem({ k, v, mono, accent }) {
 }
 
 // ============================================================
-// PRINCE DASHBOARD — combined overview + team management
+// SUPER ADMIN DASHBOARD
 // ============================================================
-function SuperAdminScreen({ t, lang, applicants, team, isPrince, onCreateMember, onUpdateMember, onDeleteMember, onRegeneratePassword }) {
+function SuperAdminScreen({ t, lang, isPrince }) {
+  const [applicants, setApplicants] = _ps([]);
+  const [team, setTeam] = _ps([]);
+
+  function fetchAll() {
+    window.supabaseClient.from('applications').select('*').then(({ data }) => {
+      if (data) setApplicants(data);
+    });
+    window.supabaseClient.from('profiles').select('*').in('role', ['rad_r5', 'rad_r4', 'mtlh_r5', 'mtlh_r4', 'super', 'recruiter']).then(({ data }) => {
+      if (data) setTeam(data);
+    });
+  }
+
+  _pe(() => { fetchAll(); }, []);
+
   const stats = _pm(() => {
     const groups = { rad: { pending: 0, review: 0, accepted: 0, rejected: 0, totalPower: 0 },
                      mtlh: { pending: 0, review: 0, accepted: 0, rejected: 0, totalPower: 0 } };
     applicants.forEach(a => {
-      groups[a.guild][a.status]++;
-      if (a.status === "accepted") groups[a.guild].totalPower += a.power;
+      if (groups[a.guild]) {
+        groups[a.guild][a.status]++;
+        if (a.status === "accepted") groups[a.guild].totalPower += parseInt(a.power, 10);
+      }
     });
     return groups;
   }, [applicants]);
@@ -355,11 +392,7 @@ function SuperAdminScreen({ t, lang, applicants, team, isPrince, onCreateMember,
   return (
     <main className="container container--wide">
       <div className="eyebrow">{t("super_title")}</div>
-      <h1 className="display" style={{ fontSize: 44, marginTop: 8 }}>
-        Consolidated view
-      </h1>
-      <p className="subtle" style={{ marginTop: 8 }}>{t("super_sub")}</p>
-
+      <h1 className="display" style={{ fontSize: 44, marginTop: 8 }}>Consolidated view</h1>
       <div className="hairline hairline--gold"></div>
 
       <div className="grid-resp-2" style={{ gap: 24 }}>
@@ -390,12 +423,11 @@ function SuperAdminScreen({ t, lang, applicants, team, isPrince, onCreateMember,
                 </div>
               ))}
             </div>
-
             <div className="mt-6" style={{ paddingTop: 16, borderTop: "1px solid var(--line-soft)" }}>
               <div className="row row--between">
                 <span className="subtle" style={{ fontSize: 13 }}>Power added (accepted)</span>
                 <span className="display" style={{ fontSize: 22, color: `var(--${g})` }}>
-                  +{window.FMT.power(stats[g].totalPower)}
+                  +{window.FMT?.power ? window.FMT.power(stats[g].totalPower) : stats[g].totalPower}
                 </span>
               </div>
             </div>
@@ -403,223 +435,38 @@ function SuperAdminScreen({ t, lang, applicants, team, isPrince, onCreateMember,
         ))}
       </div>
 
-      {/* Team management — Prince only */}
       {isPrince && (
         <>
-          <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 8 }}>
-            Team management
-          </h2>
-          <p className="subtle" style={{ marginBottom: 24 }}>
-            Create accounts for R5, R4, Recruiters and assign Prince rights. R5 and R4 only see their guild's applications.
-          </p>
-          <TeamManagement team={team} onCreate={onCreateMember} onUpdate={onUpdateMember} onDelete={onDeleteMember} onRegeneratePassword={onRegeneratePassword} t={t} />
+          <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 8 }}>Team management</h2>
+          <p className="subtle" style={{ marginBottom: 24 }}>Update roles of existing members.</p>
+          <div className="card">
+            {team.map(m => (
+               <div key={m.id} className="row row--between" style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)" }}>
+                  <div>
+                    <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
+                  </div>
+                  <div>
+                    <select className="select" value={m.role} onChange={(e) => {
+                      window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchAll());
+                    }}>
+                      <option value="player">Player</option>
+                      <option value="rad_r4">RAD R4</option>
+                      <option value="rad_r5">RAD R5</option>
+                      <option value="mtlh_r4">MTLH R4</option>
+                      <option value="mtlh_r5">MTLH R5</option>
+                      <option value="recruiter">Recruiter</option>
+                      <option value="super">Prince</option>
+                    </select>
+                  </div>
+               </div>
+            ))}
+          </div>
         </>
       )}
 
-      <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 24 }}>
-        {t("roster_title")}
-      </h2>
-      <div className="subtle" style={{ marginBottom: 24, marginTop: -16 }}>{t("roster_sub")}</div>
-
+      <h2 className="display" style={{ fontSize: 32, marginTop: 64, marginBottom: 24 }}>{t("roster_title")}</h2>
       <RosterGrid applicants={applicants.filter(a => a.status === "accepted")} t={t} lang={lang} />
     </main>
-  );
-}
-
-// ============================================================
-// TEAM MANAGEMENT  (Prince only)
-// ============================================================
-function TeamManagement({ team, onCreate, onUpdate, onDelete, onRegeneratePassword, t }) {
-  const [adding, setAdding] = _ps(false);
-  const [newIgn, setNewIgn] = _ps("");
-  const [newRole, setNewRole] = _ps("R4");
-  const [newGuild, setNewGuild] = _ps("rad");
-  const [editingId, setEditingId] = _ps(null);
-  const [credsForId, setCredsForId] = _ps(null);   // currently-revealed credentials row
-  const [justCreated, setJustCreated] = _ps(null); // banner after creation: full member with password
-
-  function reset() { setAdding(false); setNewIgn(""); setNewRole("R4"); setNewGuild("rad"); }
-  function submit() {
-    if (!newIgn.trim()) return;
-    const created = onCreate({ ign: newIgn, role: newRole, guild: newGuild });
-    reset();
-    if (created) {
-      setJustCreated(created);
-      setCredsForId(created.id);
-    }
-  }
-
-  function copy(text) {
-    if (navigator.clipboard) navigator.clipboard.writeText(text);
-  }
-
-  const sorted = [...team].sort((a, b) => {
-    const order = { Prince: 0, Recruiter: 1, R5: 2, R4: 3 };
-    if (order[a.role] !== order[b.role]) return order[a.role] - order[b.role];
-    if ((a.guild || "") !== (b.guild || "")) return (a.guild || "").localeCompare(b.guild || "");
-    return a.ign.localeCompare(b.ign);
-  });
-
-  return (
-    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      <div className="row row--between" style={{ padding: "16px 24px", borderBottom: "1px solid var(--line-soft)" }}>
-        <div className="eyebrow eyebrow--mute">{team.length} members</div>
-        {!adding && (
-          <button className="btn btn--primary btn--sm" onClick={() => setAdding(true)}>+ Add member</button>
-        )}
-      </div>
-
-      {/* One-time credentials banner after creation */}
-      {justCreated && (
-        <div className="creds-banner">
-          <div>
-            <div className="eyebrow" style={{ color: "var(--ok)" }}>✓ Account created — share these credentials</div>
-            <div style={{ fontSize: 13, marginTop: 8, color: "var(--ink-dim)" }}>
-              <strong style={{ color: "var(--ink)" }}>{justCreated.ign}</strong> can sign in with their in-game name and the password below. This is the only time it will be displayed.
-            </div>
-            <div className="creds-banner__pwd">
-              <span className="mono">{justCreated.password}</span>
-              <button className="btn btn--ghost btn--sm" onClick={() => copy(justCreated.password)}>Copy password</button>
-              <button className="btn btn--ghost btn--sm" onClick={() => copy(`IGN: ${justCreated.ign}\nPassword: ${justCreated.password}`)}>Copy IGN + password</button>
-            </div>
-          </div>
-          <button className="btn btn--ghost btn--sm" onClick={() => setJustCreated(null)}>Dismiss</button>
-        </div>
-      )}
-
-      {adding && (
-        <div className="team-add">
-          <Field label="In-game name" required>
-            <input className="input" value={newIgn} onChange={e => setNewIgn(e.target.value)} placeholder="Aurelyn" autoFocus />
-          </Field>
-          <Field label="Role" required>
-            <select className="select" value={newRole} onChange={e => setNewRole(e.target.value)}>
-              <option value="R5">R5 — Guild Leader</option>
-              <option value="R4">R4 — Officer</option>
-              <option value="Recruiter">Recruiter</option>
-              <option value="Prince">Prince</option>
-            </select>
-          </Field>
-          <Field label="Guild" hint={(newRole === "Prince" || newRole === "Recruiter") ? "Cross-guild (no assignment)" : "—"}>
-            <select className="select" value={newGuild} onChange={e => setNewGuild(e.target.value)}
-              disabled={newRole === "Prince" || newRole === "Recruiter"}>
-              <option value="rad">RAD · The Radiant</option>
-              <option value="mtlh">MTLH · Metalheads</option>
-            </select>
-          </Field>
-          <div className="team-add__actions">
-            <button className="btn btn--ghost btn--sm" onClick={reset}>Cancel</button>
-            <button className="btn btn--primary btn--sm" onClick={submit} disabled={!newIgn.trim()}>Create + generate password</button>
-          </div>
-        </div>
-      )}
-
-      <div className="team-list">
-        <div className="team-list__head">
-          <div>Member</div>
-          <div>Role</div>
-          <div>Guild</div>
-          <div style={{ textAlign: "right" }}>Actions</div>
-        </div>
-        {sorted.map(m => (
-          <TeamRow key={m.id} member={m}
-            isEditing={editingId === m.id}
-            credsRevealed={credsForId === m.id}
-            onEdit={() => { setEditingId(m.id); setCredsForId(null); }}
-            onCancel={() => setEditingId(null)}
-            onSave={(patch) => { onUpdate(m.id, patch); setEditingId(null); }}
-            onDelete={() => { if (confirm(`Remove ${m.ign} from the team?`)) onDelete(m.id); }}
-            onToggleCreds={() => setCredsForId(credsForId === m.id ? null : m.id)}
-            onRegenerate={() => {
-              if (!confirm(`Generate a new password for ${m.ign}? The old one will stop working.`)) return;
-              onRegeneratePassword(m.id);
-            }}
-            onCopy={copy}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TeamRow({ member, isEditing, credsRevealed, onEdit, onSave, onCancel, onDelete, onToggleCreds, onRegenerate, onCopy }) {
-  const [role, setRole] = _ps(member.role);
-  const [guild, setGuild] = _ps(member.guild || "rad");
-  _pe(() => { setRole(member.role); setGuild(member.guild || "rad"); }, [member.id, isEditing]);
-
-  if (isEditing) {
-    return (
-      <div className="team-row team-row--editing">
-        <div className="row" style={{ gap: 12 }}>
-          <Avatar name={member.ign} guild={member.color === "all" ? null : member.color} />
-          <span style={{ fontWeight: 600 }}>{member.ign}</span>
-        </div>
-        <select className="select" value={role} onChange={e => setRole(e.target.value)}>
-          <option value="R5">R5</option>
-          <option value="R4">R4</option>
-          <option value="Recruiter">Recruiter</option>
-          <option value="Prince">Prince</option>
-        </select>
-        <select className="select" value={guild} onChange={e => setGuild(e.target.value)}
-          disabled={role === "Prince" || role === "Recruiter"}>
-          <option value="rad">RAD</option>
-          <option value="mtlh">MTLH</option>
-        </select>
-        <div className="row row--end" style={{ gap: 8 }}>
-          <button className="btn btn--ghost btn--sm" onClick={onCancel}>Cancel</button>
-          <button className="btn btn--primary btn--sm" onClick={() => onSave({ role, guild })}>Save</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="team-row">
-        <div className="row" style={{ gap: 12, minWidth: 0 }}>
-          <Avatar name={member.ign} guild={member.color === "all" ? null : member.color} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{member.ign}</div>
-            <div className="mono faint" style={{ fontSize: 11 }}>{member.id}</div>
-          </div>
-        </div>
-        <div>
-          <span className={`badge ${member.role === "Prince" ? "badge--pending" : member.role === "Recruiter" ? "badge--review" : "badge--role"}`}>
-            {member.role === "Prince" && "★ "}{member.role}
-          </span>
-        </div>
-        <div>
-          {member.guild
-            ? <GuildBadge guild={member.guild} t={null} />
-            : <span className="mono faint" style={{ fontSize: 11 }}>CROSS-GUILD</span>
-          }
-        </div>
-        <div className="row row--end" style={{ gap: 6, flexWrap: "wrap" }}>
-          <button className="btn btn--ghost btn--sm" onClick={onToggleCreds} title="Show credentials">
-            {credsRevealed ? "Hide" : "Credentials"}
-          </button>
-          <button className="btn btn--ghost btn--sm" onClick={onEdit}>Edit</button>
-          {!member.isPrince && (
-            <button className="btn btn--danger btn--sm" onClick={onDelete}>Remove</button>
-          )}
-        </div>
-      </div>
-      {credsRevealed && (
-        <div className="team-creds">
-          <div className="team-creds__row">
-            <span className="kv__k" style={{ width: 80 }}>IGN</span>
-            <span className="mono" style={{ flex: 1 }}>{member.ign}</span>
-            <button className="btn btn--ghost btn--sm" onClick={() => onCopy(member.ign)}>Copy</button>
-          </div>
-          <div className="team-creds__row">
-            <span className="kv__k" style={{ width: 80 }}>Password</span>
-            <span className="mono" style={{ flex: 1 }}>{member.password || "—"}</span>
-            <button className="btn btn--ghost btn--sm" onClick={() => onCopy(member.password || "")}>Copy</button>
-            <button className="btn btn--danger btn--sm" onClick={onRegenerate}>Regenerate</button>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 
@@ -642,7 +489,7 @@ function RosterGrid({ applicants, t, lang }) {
             <div>
               <div className="kv__k">{t("f_power")}</div>
               <div style={{ color: `var(--${a.guild})`, fontFamily: "var(--f-display)", fontSize: 22 }}>
-                {window.FMT.power(a.power)}
+                {window.FMT?.power ? window.FMT.power(a.power) : a.power}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
