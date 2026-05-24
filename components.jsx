@@ -21,7 +21,7 @@ function Glyph({ size = 28 }) {
 function GuildSigil({ guild, size = 96, logoUrl = null }) {
   if (logoUrl && logoUrl.trim() !== "") {
     return (
-      <img src={logoUrl} alt={`${guild} logo`} style={{ width: size, height: size, objectFit: 'contain', display: 'block', borderRadius: '50%' }} />
+      <img src={logoUrl} alt={`${guild} logo`} style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
     );
   }
 
