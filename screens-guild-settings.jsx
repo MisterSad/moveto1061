@@ -2,6 +2,15 @@
 
 const _gs = React.useState;
 
+function calcAvg(total, members) {
+  if (!total || !members) return "—";
+  const avg = total / members;
+  if (avg >= 1000000000) return (avg / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (avg >= 1000000) return (avg / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (avg >= 1000) return (avg / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return Math.floor(avg).toString();
+}
+
 function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
   const [form, setForm] = _gs(settings);
   const [saved, setSaved] = _gs(false);
@@ -77,15 +86,34 @@ function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
         <div className="grid-resp-3" style={{ gap: 20 }}>
           <Field label={t("stat_members")} required>
             <input className="input mono" type="number" min="0" value={form?.members ?? ""}
-              onChange={e => set("members", parseInt(e.target.value) || 0)} />
+              onChange={e => {
+                const m = parseInt(e.target.value) || 0;
+                setForm(f => {
+                  const nf = { ...f, members: m };
+                  nf.avg_power = calcAvg(nf.total_power, nf.members);
+                  return nf;
+                });
+                setSaved(false);
+              }} />
           </Field>
-          <Field label={t("stat_avg_power")} required hint="e.g. 73M">
-            <input className="input mono" value={form?.avgPower ?? ""}
-              onChange={e => set("avgPower", e.target.value)} />
+          <Field label="Total Power" required hint="e.g. 1500000000">
+            <input className="input mono" type="number" min="0" value={form?.total_power ?? ""}
+              onChange={e => {
+                const tp = parseInt(e.target.value) || 0;
+                setForm(f => {
+                  const nf = { ...f, total_power: tp };
+                  nf.avg_power = calcAvg(nf.total_power, nf.members);
+                  return nf;
+                });
+                setSaved(false);
+              }} />
           </Field>
           <Field label={t("stat_open_slots")} required>
             <input className="input mono" type="number" min="0" value={form?.slots ?? ""}
               onChange={e => set("slots", parseInt(e.target.value) || 0)} />
+          </Field>
+          <Field label={t("stat_avg_power")} hint="Calculated automatically">
+            <input className="input mono" value={form?.avg_power || form?.avgPower || ""} disabled style={{ background: "var(--bg-1)", cursor: "not-allowed", color: "var(--ink-dim)" }} />
           </Field>
         </div>
       </div>
