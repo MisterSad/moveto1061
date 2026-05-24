@@ -145,6 +145,13 @@ function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
               setSaved(false);
             }} />
         </Field>
+        
+        <div style={{ marginTop: 20 }}>
+          <Field label="Logo URL" hint="Lien direct vers une image (ex: .png, .jpg)">
+            <input className="input" value={form?.logo_url ?? ""} placeholder="https://..."
+              onChange={e => set("logo_url", e.target.value)} />
+          </Field>
+        </div>
       </div>
 
       <div className="card" style={{ marginTop: 24, background: "var(--bg-1)" }}>

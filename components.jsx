@@ -18,7 +18,13 @@ function Glyph({ size = 28 }) {
 }
 
 // ===== Guild sigil — abstract emblems, NOT logos =====
-function GuildSigil({ guild, size = 96 }) {
+function GuildSigil({ guild, size = 96, logoUrl = null }) {
+  if (logoUrl && logoUrl.trim() !== "") {
+    return (
+      <img src={logoUrl} alt={`${guild} logo`} style={{ width: size, height: size, objectFit: 'contain', display: 'block', borderRadius: '50%' }} />
+    );
+  }
+
   if (guild === "rad") {
     return (
       <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: "block" }}>

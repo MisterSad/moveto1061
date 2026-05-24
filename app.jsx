@@ -117,7 +117,7 @@ function App() {
       <Route path="/login" element={<LoginScreen t={t} lang={lang} session={session} setRoute={setRoute} />} />
       <Route path="/guild_settings" element={<GuildSettingsScreen t={t} lang={lang} guild={myGuild} settings={guildSettings[myGuild]} onSave={(patch) => updateGuildSettings(myGuild, patch)} />} />
       <Route path="/profile" element={<ProfileScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setDraftApp={setDraftApp} setRoute={setRoute} />} />
-      <Route path="/apply" element={!session ? <Navigate to="/profile" replace /> : <ApplyScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setRoute={setRoute} />} />
+      <Route path="/apply" element={!session ? <Navigate to="/profile" replace /> : <ApplyScreen t={t} lang={lang} session={session} profile={profile} setProfile={setProfile} draftApp={draftApp} setRoute={setRoute} guildSettings={guildSettings} />} />
       <Route path="/player" element={<PlayerDashboard t={t} lang={lang} session={session} profile={profile} />} />
       <Route path="/admin/rad" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="rad" />} />
       <Route path="/admin/mtlh" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="mtlh" />} />
