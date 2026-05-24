@@ -25,10 +25,6 @@ function LandingScreen({ t, lang, setRoute, role, guildSettings }) {
               document.getElementById("guilds-section").scrollIntoView({ behavior: "smooth", block: "start" });
             }}>{t("hero_cta_learn")}</button>
           </div>
-
-          <div className="mono" style={{ marginTop: 64, color: "var(--ink-mute)", fontSize: 12, letterSpacing: "0.18em" }}>
-            {lang === "fr" ? "LA FENÊTRE DE MIGRATION OUVRIRA BIENTÔT" : "MIGRATION WINDOWS WILL OPEN SOON"}
-          </div>
         </div>
       </section>
 

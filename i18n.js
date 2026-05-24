@@ -15,7 +15,7 @@ window.I18N = {
     hero_title_a: "Serveur #1061.",
     hero_title_b: "Deux guildes.",
     hero_title_c: "Un front.",
-    hero_lead: "Les fenêtres de migration ouvrent sous XX jours.\nLe serveur #1061 accueille [RAD] The Radiant et [MTLH] Metalheads,\nses deux guildes principales, qui recrutent activement\navant la consolidation. Postulez à la guilde de votre choix.",
+    hero_lead: "Les fenêtres de migration ouvriront bientôt.\nLe serveur #1061 accueille [RAD] The Radiant et [MTLH] Metalheads,\nses deux guildes principales, qui recrutent activement\navant la consolidation. Postulez à la guilde de votre choix.",
     hero_cta_apply: "Déposer ma candidature",
     hero_cta_learn: "Découvrir les guildes",
 
@@ -147,7 +147,7 @@ window.I18N = {
     hero_title_a: "Server #1061.",
     hero_title_b: "Two guilds.",
     hero_title_c: "One frontier.",
-    hero_lead: "Migration windows open in XX days.\nServer #1061 is home to [RAD] The Radiant and [MTLH] Metalheads,\nits two top guilds, both actively recruiting before consolidation.\nApply to the guild of your choice.",
+    hero_lead: "Migration windows will open soon.\nServer #1061 is home to [RAD] The Radiant and [MTLH] Metalheads,\nits two top guilds, both actively recruiting before consolidation.\nApply to the guild of your choice.",
     hero_cta_apply: "Submit my application",
     hero_cta_learn: "Meet the guilds",
 
