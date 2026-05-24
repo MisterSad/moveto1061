@@ -435,21 +435,21 @@ function SystemAdminScreen({ t, lang }) {
       <div className="hairline hairline--gold"></div>
       
       <p className="subtle" style={{ marginBottom: 24, marginTop: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
-      <div className="card">
-        <div className="team-list__head row row--between" style={{ padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
-          <div style={{ flex: 1 }}>Member</div>
-          <div style={{ width: 130 }}>Base Role</div>
-          <div style={{ width: 80, textAlign: "center" }}>Prince?</div>
-          <div style={{ width: 80, textAlign: "center" }}>Recruiter?</div>
-          <div style={{ width: 80, textAlign: "center", color: "var(--gold)" }}>Admin?</div>
+      <div className="card" style={{ overflowX: "auto" }}>
+        <div className="team-list__head" style={{ minWidth: 600, display: "grid", gridTemplateColumns: "1fr 120px 80px 80px 80px", gap: 12, padding: "0 0 12px 0", borderBottom: "1px solid var(--line-soft)", fontWeight: "bold", fontSize: 13 }}>
+          <div>Member</div>
+          <div>Base Role</div>
+          <div style={{ textAlign: "center" }}>Prince?</div>
+          <div style={{ textAlign: "center" }}>Recruiter?</div>
+          <div style={{ textAlign: "center", color: "var(--gold)" }}>Admin?</div>
         </div>
         {team.map(m => (
-           <div key={m.id} className="row row--between" style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
-              <div style={{ flex: 1 }}>
+           <div key={m.id} style={{ minWidth: 600, display: "grid", gridTemplateColumns: "1fr 120px 80px 80px 80px", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--line-soft)", alignItems: "center" }}>
+              <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
               </div>
-              <div style={{ width: 130 }}>
-                <select className="select" style={{ padding: "4px 8px", fontSize: 13 }} value={m.role} onChange={(e) => {
+              <div>
+                <select className="select" style={{ padding: "4px 8px", fontSize: 13, width: "100%" }} value={m.role} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchTeam());
                 }}>
                   <option value="player">Player</option>
@@ -459,17 +459,17 @@ function SystemAdminScreen({ t, lang }) {
                   <option value="mtlh_r5">MTLH R5</option>
                 </select>
               </div>
-              <div style={{ width: 80, textAlign: "center" }}>
+              <div style={{ textAlign: "center" }}>
                 <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
-              <div style={{ width: 80, textAlign: "center" }}>
+              <div style={{ textAlign: "center" }}>
                 <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
               </div>
-              <div style={{ width: 80, textAlign: "center" }}>
+              <div style={{ textAlign: "center" }}>
                 <input type="checkbox" checked={!!m.is_admin} onChange={(e) => {
                   window.supabaseClient.from('profiles').update({ is_admin: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
                 }} />
