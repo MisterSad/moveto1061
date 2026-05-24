@@ -425,8 +425,8 @@ h3.display { font-size: clamp(22px, 2.4vw, 32px); }
   margin: var(--s4) 0 var(--s6);
 }
 .guild-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: var(--s4); margin-top: var(--s6);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: var(--s2); margin-top: var(--s6);
   border-top: 1px solid var(--line-soft);
   padding-top: var(--s6);
 }

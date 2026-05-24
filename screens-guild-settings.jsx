@@ -160,7 +160,8 @@ function GuildSettingsScreen({ t, lang, guild, settings, onSave }) {
           <div className="display" style={{ fontSize: 24, color: "var(--ink)" }}>{guildName}</div>
           <div className="row" style={{ gap: 32, marginTop: 16, flexWrap: "wrap" }}>
             <div><div className="kv__k">{t("stat_members")}</div><div className="display" style={{ fontSize: 22, color: `var(--${c})` }}>{form?.members ?? "—"}</div></div>
-            <div><div className="kv__k">{t("stat_avg_power")}</div><div className="display" style={{ fontSize: 22, color: `var(--${c})` }}>{form?.avgPower ?? "—"}</div></div>
+            <div><div className="kv__k">Total Power</div><div className="display" style={{ fontSize: 22, color: `var(--${c})` }}>{calcAvg(form?.total_power, 1)}</div></div>
+            <div><div className="kv__k">{t("stat_avg_power")}</div><div className="display" style={{ fontSize: 22, color: `var(--${c})` }}>{form?.avgPower || form?.avg_power || "—"}</div></div>
             <div><div className="kv__k">{t("stat_open_slots")}</div><div className="display" style={{ fontSize: 22, color: `var(--${c})` }}>{form?.slots ?? "—"}</div></div>
           </div>
           <ul style={{ marginTop: 16, paddingLeft: 0, listStyle: "none", color: "var(--ink-dim)", fontSize: 14 }}>

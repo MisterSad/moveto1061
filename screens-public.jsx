@@ -70,6 +70,14 @@ function LandingScreen({ t, lang, setRoute, role, guildSettings }) {
   );
 }
 
+function formatBigPower(num) {
+  if (!num) return "—";
+  if (num >= 1000000000) return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return Math.floor(num).toString();
+}
+
 function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
   const s = settings || {};
   const reqs = (lang === "fr" ? s.req : s.req_en) || [];
@@ -77,13 +85,13 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
   const data = guild === "rad"
     ? {
         name: "RAD · The Radiant",
-        members: s.members ?? 47, avg: s.avg_power ?? "73M", slots: s.slots ?? 8,
+        members: s.members ?? 47, avg: s.avg_power ?? "73M", slots: s.slots ?? 8, total: s.total_power ? formatBigPower(s.total_power) : "3.4B",
         motto: t("rad_motto"),
         pitch, reqs,
       }
     : {
         name: "MTLH · Metalheads",
-        members: s.members ?? 52, avg: s.avg_power ?? "58M", slots: s.slots ?? 12,
+        members: s.members ?? 52, avg: s.avg_power ?? "58M", slots: s.slots ?? 12, total: s.total_power ? formatBigPower(s.total_power) : "3.0B",
         motto: t("mtlh_motto"),
         pitch, reqs,
       };
@@ -103,6 +111,10 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
           <div className="guild-stats__item">
             <div className="guild-stats__value" style={{ color: `var(--${c})` }}>{data.members}</div>
             <div className="guild-stats__label">{t("stat_members")}</div>
+          </div>
+          <div className="guild-stats__item">
+            <div className="guild-stats__value" style={{ color: `var(--${c})` }}>{data.total}</div>
+            <div className="guild-stats__label">Total Power</div>
           </div>
           <div className="guild-stats__item">
             <div className="guild-stats__value" style={{ color: `var(--${c})` }}>{data.avg}</div>
