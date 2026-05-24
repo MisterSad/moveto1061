@@ -73,7 +73,11 @@ function formatBigPower(num) {
 
 function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
   const s = settings || {};
-  const reqs = (lang === "fr" ? s.req : s.req_en) || [];
+  const dbReqs = (lang === "fr" ? s.req : s.req_en);
+  const defaultReqs = guild === "rad"
+    ? [t("req_rad_1"), t("req_rad_2"), t("req_rad_3")]
+    : [t("req_mtlh_1"), t("req_mtlh_2"), t("req_mtlh_3")];
+  const reqs = dbReqs && dbReqs.length > 0 ? dbReqs : defaultReqs;
   const pitch = (lang === "fr" ? s.pitch : s.pitch_en) || "";
   const data = guild === "rad"
     ? {
@@ -96,7 +100,7 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
       </div>
       <div style={{ textAlign: "center", color: "var(--ink)" }}>
         <div className="eyebrow" style={{ color: `var(--${c})` }}>{guild === "rad" ? "Order I" : "Order II"}</div>
-        <h2 className="display" style={{ marginTop: 12, fontSize: 36 }}>{data.name}</h2>
+        <h2 className="display" style={{ marginTop: 12 }}>{data.name}</h2>
         <div className="guild-card__motto">{data.motto}</div>
         <p style={{ color: "var(--ink-dim)", maxWidth: 440, margin: "0 auto", fontSize: 15 }}>{data.pitch}</p>
 
@@ -125,9 +129,9 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
           <div className="eyebrow eyebrow--mute">{t("requirements")}</div>
           <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", fontSize: 14, color: "var(--ink-dim)" }}>
             {data.reqs.map((r, i) => (
-              <li key={i} style={{ padding: "6px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                <span style={{ color: `var(--${c})`, fontFamily: "var(--f-mono)", fontSize: 11 }}>0{i + 1}</span>
-                {r}
+              <li key={i} style={{ padding: "6px 0", display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 10 }}>
+                <span style={{ color: `var(--${c})`, fontFamily: "var(--f-mono)", fontSize: 11, flexShrink: 0, marginTop: 3 }}>0{i + 1}</span>
+                <span style={{ textAlign: "left" }}>{r}</span>
               </li>
             ))}
           </ul>
@@ -166,7 +170,7 @@ function LoginScreen({ t, lang, session, setRoute }) {
         <div className="text-center">
           <div className="glyph-big">●</div>
           <div className="eyebrow">{t("login_title")}</div>
-          <h2 className="display" style={{ marginTop: 8, fontSize: 32 }}>
+          <h2 className="display" style={{ marginTop: 8 }}>
             {lang === "fr" ? "Accès au portail" : "Portal access"}
           </h2>
           <p className="subtle" style={{ marginTop: 12 }}>{t("login_lead")}</p>
@@ -244,7 +248,7 @@ function ProfileScreen({ t, lang, session, profile, setProfile, draftApp, setDra
       ]} current={1} />
 
       <div className="eyebrow">{lang === "fr" ? "Étape 02" : "Step 02"}</div>
-      <h1 className="display" style={{ fontSize: 44, marginTop: 12 }}>{t("profile_title")}</h1>
+      <h1 className="display" style={{ marginTop: 12 }}>{t("profile_title")}</h1>
       <p className="subtle" style={{ fontSize: 16, marginTop: 12, marginBottom: 40 }}>{t("profile_lead")}</p>
 
       <div className="card">
@@ -349,7 +353,7 @@ function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute
       ]} current={2} />
 
       <div className="eyebrow">{lang === "fr" ? "Étape 03" : "Step 03"}</div>
-      <h1 className="display" style={{ fontSize: 44, marginTop: 12 }}>{t("apply_title")}</h1>
+      <h1 className="display" style={{ marginTop: 12 }}>{t("apply_title")}</h1>
       <p className="subtle" style={{ fontSize: 16, marginTop: 12, marginBottom: 40 }}>{t("apply_lead")}</p>
 
       <div className="guild-picker">

@@ -23,12 +23,12 @@ function GuildSigil({ guild, size = 96, logoUrl = null }) {
   // but by default we use the hardcoded images.
   if (guild === "rad") {
     return (
-      <img src="/rad-logo.png" alt="RAD logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
+      <img src="rad-logo.png" alt="RAD logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
     );
   }
   if (guild === "mtlh") {
     return (
-      <img src="/mtlh-logo.png" alt="MTLH logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
+      <img src="mtlh-logo.png" alt="MTLH logo" style={{ width: size, height: size, objectFit: 'cover', display: 'block', borderRadius: '50%' }} />
     );
   }
   

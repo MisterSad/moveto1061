@@ -179,8 +179,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =====  Reusable typography  ===== */
-h2.display { font-size: clamp(26px, 7vw, 36px); }
-@media (min-width: 641px) { h2.display { font-size: clamp(32px, 5vw, 44px); } }
 .eyebrow {
   font-family: var(--f-mono);
   text-transform: uppercase;
@@ -192,12 +190,44 @@ h2.display { font-size: clamp(26px, 7vw, 36px); }
 .display {
   font-family: var(--f-display);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1; /* slightly relaxed to prevent iOS Safari descender/ascender clipping */
   letter-spacing: -0.035em;
 }
-h1.display { font-size: clamp(40px, 6vw, 88px); }
-h2.display { font-size: clamp(28px, 3.6vw, 52px); }
-h3.display { font-size: clamp(22px, 2.4vw, 32px); }
+h1.display { font-size: clamp(32px, 9vw, 48px); }
+h2.display { font-size: clamp(24px, 7vw, 36px); }
+h3.display { font-size: clamp(20px, 5vw, 26px); }
+
+@media (min-width: 641px) {
+  h1.display { font-size: clamp(48px, 8vw, 68px); }
+  h2.display { font-size: clamp(36px, 6vw, 44px); }
+  h3.display { font-size: clamp(24px, 4vw, 30px); }
+}
+
+@media (min-width: 881px) {
+  h1.display { font-size: clamp(68px, 6vw, 88px); }
+  h2.display { font-size: clamp(44px, 3.6vw, 52px); }
+  h3.display { font-size: clamp(30px, 2.4vw, 32px); }
+}
+
+.guild-card h2.display {
+  font-size: clamp(22px, 6vw, 28px);
+  margin-top: 12px;
+}
+@media (min-width: 641px) {
+  .guild-card h2.display { font-size: 32px; }
+}
+@media (min-width: 881px) {
+  .guild-card h2.display { font-size: 36px; }
+}
+
+.auth-card h2.display {
+  font-size: clamp(24px, 5vw, 32px);
+  margin-top: 8px;
+}
+
+.container--narrow h1.display {
+  font-size: clamp(28px, 6vw, 44px);
+}
 .subtle { color: var(--ink-dim); }
 .faint  { color: var(--ink-mute); }
 .mono   { font-family: var(--f-mono); letter-spacing: 0; }
@@ -429,15 +459,15 @@ h3.display { font-size: clamp(22px, 2.4vw, 32px); }
 .hero p.lead {
   font-size: 16px; max-width: 640px; margin: 0 auto var(--s8);
   color: var(--ink-dim);
-  white-space: pre-line;
+  white-space: normal; /* flows naturally on mobile screens */
 }
 @media (min-width: 881px) {
-  .hero p.lead { font-size: 19px; }
+  .hero p.lead { font-size: 19px; white-space: pre-line; /* preserves elegant line breaks on desktop */ }
 }
-.hero__cta { display: flex; flex-direction: column; width: 100%; gap: var(--s4); justify-content: center; flex-wrap: wrap; }
+.hero__cta { display: flex; flex-direction: column; width: 100%; max-width: 320px; margin: 0 auto; gap: var(--s4); justify-content: center; flex-wrap: wrap; }
 .hero__cta .btn { width: 100%; justify-content: center; }
 @media (min-width: 881px) {
-  .hero__cta { flex-direction: row; width: auto; }
+  .hero__cta { flex-direction: row; width: auto; max-width: none; margin: 0; }
   .hero__cta .btn { width: auto; }
 }
 
@@ -445,17 +475,24 @@ h3.display { font-size: clamp(22px, 2.4vw, 32px); }
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--s6);
-  margin-top: var(--s12);
+  margin-top: var(--s8); /* slightly tighter spacing on mobile */
 }
-@media (min-width: 881px) { .guilds { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 881px) {
+  .guilds { grid-template-columns: 1fr 1fr; margin-top: var(--s12); }
+}
 
 .guild-card {
-  padding: var(--s10) var(--s8);
+  padding: var(--s6) var(--s4); /* tighter, more efficient padding on phone screens */
   border: 1px solid var(--line-soft);
   border-radius: var(--r-lg);
   position: relative;
   overflow: hidden;
   transition: var(--t);
+}
+@media (min-width: 641px) {
+  .guild-card {
+    padding: var(--s10) var(--s8); /* expansive premium padding on tablet/desktop */
+  }
 }
 .guild-card--rad {
   background:
