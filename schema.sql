@@ -102,6 +102,33 @@ CREATE POLICY "Super admin can update any profile" ON public.profiles FOR UPDATE
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'super' OR is_admin = true))
 );
 
+-- ============================================================
+-- PROFILES SECURITY TRIGGER (Protects role & admin flags)
+-- ============================================================
+CREATE OR REPLACE FUNCTION protect_profile_roles()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If the user making the change is a super admin, allow anything
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'super' OR is_admin = true)) THEN
+    RETURN NEW;
+  END IF;
+
+  -- Otherwise, ignore changes to sensitive columns
+  NEW.role = OLD.role;
+  NEW.is_admin = OLD.is_admin;
+  NEW.is_prince = OLD.is_prince;
+  NEW.is_recruiter = OLD.is_recruiter;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS enforce_profile_security ON public.profiles;
+CREATE TRIGGER enforce_profile_security
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION protect_profile_roles();
+
 -- APPLICATIONS
 -- RLS for SELECT
 CREATE POLICY "Officers can view relevant applications" ON public.applications FOR SELECT USING (
@@ -115,8 +142,8 @@ CREATE POLICY "Officers can view relevant applications" ON public.applications F
   -- Users see their own
   (auth.uid() = user_id)
 );
--- Authenticated users can create an application
-CREATE POLICY "Users can create application" ON public.applications FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Authenticated users can create an application (Enforcing status='pending')
+CREATE POLICY "Users can create application" ON public.applications FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'pending');
 -- Users can update their own application if pending
 CREATE POLICY "Users can update own pending app" ON public.applications FOR UPDATE USING (auth.uid() = user_id AND status = 'pending');
 -- Officers can update applications in their guild, super admin can update any
@@ -132,10 +159,10 @@ CREATE POLICY "Officers can view messages" ON public.messages FOR SELECT USING (
 CREATE POLICY "Users can view messages on their app" ON public.messages FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.applications WHERE id = messages.application_id AND user_id = auth.uid())
 );
--- Officers can insert messages
-CREATE POLICY "Officers can insert messages" ON public.messages FOR INSERT WITH CHECK (is_officer(auth.uid()));
+-- Officers can insert messages (Spoofing prevention)
+CREATE POLICY "Officers can insert messages" ON public.messages FOR INSERT WITH CHECK (is_officer(auth.uid()) AND author_id = auth.uid());
 CREATE POLICY "Users can insert messages on their app" ON public.messages FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.applications WHERE id = application_id AND user_id = auth.uid())
+  EXISTS (SELECT 1 FROM public.applications WHERE id = application_id AND user_id = auth.uid()) AND author_id = auth.uid()
 );
 
 -- VOTES
@@ -146,5 +173,7 @@ CREATE POLICY "Officers can change vote" ON public.votes FOR UPDATE USING (is_of
 -- GUILD SETTINGS
 CREATE POLICY "Settings are viewable by everyone" ON public.guild_settings FOR SELECT USING (true);
 CREATE POLICY "Super and R5 can update settings" ON public.guild_settings FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('super', 'rad_r5', 'mtlh_r5'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'super' OR is_admin = true)) OR
+  (id = 'rad' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'rad_r5')) OR
+  (id = 'mtlh' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'mtlh_r5'))
 );
