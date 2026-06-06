@@ -123,21 +123,7 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
           </div>
         </div>
 
-        <hr className="hairline" />
-
-        <div className="text-center" style={{ marginBottom: 24 }}>
-          <div className="eyebrow eyebrow--mute">{t("requirements")}</div>
-          <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", fontSize: 14, color: "var(--ink-dim)" }}>
-            {data.reqs.map((r, i) => (
-              <li key={i} style={{ padding: "6px 0", display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 10 }}>
-                <span style={{ color: `var(--${c})`, fontFamily: "var(--f-mono)", fontSize: 11, flexShrink: 0, marginTop: 3 }}>0{i + 1}</span>
-                <span style={{ textAlign: "left" }}>{r}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <button className="btn btn--primary" onClick={() => {
+        <button className="btn btn--primary" style={{ marginTop: 24 }} onClick={() => {
           if (role === "visitor") setRoute("login");
           else setRoute("apply");
         }}>
@@ -326,7 +312,6 @@ function ApplyScreen({ t, lang, session, profile, draftApp, setProfile, setRoute
       power: parseInt(draftApp.power) || 0,
       timezone: draftApp.timezone,
       language: draftApp.language,
-      discord: draftApp.discord,
       motivation: draftApp.motivation,
       guild: pick,
       status: "pending"

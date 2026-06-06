@@ -419,14 +419,37 @@ function PrinceDashboardScreen({ t, lang }) {
 // ============================================================
 function SystemAdminScreen({ t, lang }) {
   const [team, setTeam] = _ps([]);
+  const [search, setSearch] = _ps("");
+  const [showAllUsers, setShowAllUsers] = _ps(false);
 
   function fetchTeam() {
-    window.supabaseClient.from('profiles').select('*').neq('role', 'player_new').then(({ data }) => {
-      if (data) setTeam(data.filter(u => u.role !== 'player')); // Filter out regular players to show only officers/super
+    window.supabaseClient.from('profiles').select('*').then(({ data }) => {
+      if (data) setTeam(data);
     });
   }
 
   _pe(() => { fetchTeam(); }, []);
+
+  const filteredTeam = _pm(() => {
+    const res = team.filter(m => {
+      if (search) {
+        const query = search.toLowerCase();
+        const matchesIgn = m.ign && m.ign.toLowerCase().includes(query);
+        const matchesDiscord = m.discord_tag && m.discord_tag.toLowerCase().includes(query);
+        if (!matchesIgn && !matchesDiscord) return false;
+      }
+      if (!showAllUsers && !search) {
+        const isOfficerOrAdmin = 
+          (m.role !== 'player_new' && m.role !== 'player') || 
+          m.is_admin || 
+          m.is_prince || 
+          m.is_recruiter;
+        if (!isOfficerOrAdmin) return false;
+      }
+      return true;
+    });
+    return [...res].sort((a, b) => (a.ign || "").localeCompare(b.ign || ""));
+  }, [team, search, showAllUsers]);
 
   return (
     <main className="container container--wide">
@@ -435,6 +458,28 @@ function SystemAdminScreen({ t, lang }) {
       <div className="hairline hairline--gold"></div>
       
       <p className="subtle" style={{ marginBottom: 24, marginTop: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
+      
+      <div className="row" style={{ gap: 16, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <input 
+            type="text" 
+            className="input" 
+            placeholder="Search by name or Discord..." 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)} 
+            style={{ width: "100%", padding: "8px 12px" }}
+          />
+        </div>
+        <label className="row row--gap2" style={{ cursor: "pointer", userSelect: "none" }}>
+          <input 
+            type="checkbox" 
+            checked={showAllUsers} 
+            onChange={(e) => setShowAllUsers(e.target.checked)} 
+          />
+          <span style={{ fontSize: 14, color: "var(--ink-dim)" }}>Show all players & new recruits</span>
+        </label>
+      </div>
+
       <div className="card" style={{ overflowX: "auto" }}>
         <div className="team-list__head">
           <div>Member</div>
@@ -443,42 +488,48 @@ function SystemAdminScreen({ t, lang }) {
           <div style={{ textAlign: "center" }}>Recruiter?</div>
           <div style={{ textAlign: "center", color: "var(--gold)" }}>Admin?</div>
         </div>
-        {team.map(m => (
-           <div key={m.id} className="team-row">
-              <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                <strong>{m.ign}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag})</span>
-              </div>
-              <div>
-                <select className="select" style={{ padding: "4px 8px", fontSize: 13, width: "100%" }} value={m.role} onChange={(e) => {
-                  window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchTeam());
-                }}>
-                  <option value="player">Player</option>
-                  <option value="rad_r4">RAD R4</option>
-                  <option value="rad_r5">RAD R5</option>
-                  <option value="mtlh_r4">MTLH R4</option>
-                  <option value="mtlh_r5">MTLH R5</option>
-                </select>
-              </div>
-              <div className="team-row__cb">
-                <span className="mobile-label">Prince?</span>
-                <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
-                  window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
-                }} />
-              </div>
-              <div className="team-row__cb">
-                <span className="mobile-label">Recruiter?</span>
-                <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
-                  window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
-                }} />
-              </div>
-              <div className="team-row__cb">
-                <span className="mobile-label" style={{ color: "var(--gold)" }}>Admin?</span>
-                <input type="checkbox" checked={!!m.is_admin} onChange={(e) => {
-                  window.supabaseClient.from('profiles').update({ is_admin: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
-                }} />
-              </div>
-           </div>
-        ))}
+        {filteredTeam.length === 0 ? (
+          <div className="empty" style={{ padding: 32 }}>No members found</div>
+        ) : (
+          filteredTeam.map(m => (
+             <div key={m.id} className="team-row">
+                <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <strong>{m.ign || "Anonymous"}</strong> <span className="mono subtle" style={{fontSize:11}}>({m.discord_tag || "No Discord tag"})</span>
+                </div>
+                <div>
+                  <select className="select" style={{ padding: "4px 8px", fontSize: 13, width: "100%" }} value={m.role} onChange={(e) => {
+                    window.supabaseClient.from('profiles').update({ role: e.target.value }).eq('id', m.id).then(() => fetchTeam());
+                  }}>
+                    <option value="player_new">New Player (No App)</option>
+                    <option value="player">Player</option>
+                    <option value="rad_r4">RAD R4</option>
+                    <option value="rad_r5">RAD R5</option>
+                    <option value="mtlh_r4">MTLH R4</option>
+                    <option value="mtlh_r5">MTLH R5</option>
+                    <option value="super">Super Admin</option>
+                  </select>
+                </div>
+                <div className="team-row__cb">
+                  <span className="mobile-label">Prince?</span>
+                  <input type="checkbox" checked={!!m.is_prince} onChange={(e) => {
+                    window.supabaseClient.from('profiles').update({ is_prince: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                  }} />
+                </div>
+                <div className="team-row__cb">
+                  <span className="mobile-label">Recruiter?</span>
+                  <input type="checkbox" checked={!!m.is_recruiter} onChange={(e) => {
+                    window.supabaseClient.from('profiles').update({ is_recruiter: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                  }} />
+                </div>
+                <div className="team-row__cb">
+                  <span className="mobile-label" style={{ color: "var(--gold)" }}>Admin?</span>
+                  <input type="checkbox" checked={!!m.is_admin} onChange={(e) => {
+                    window.supabaseClient.from('profiles').update({ is_admin: e.target.checked }).eq('id', m.id).then(() => fetchTeam());
+                  }} />
+                </div>
+             </div>
+          ))
+        )}
       </div>
     </main>
   );

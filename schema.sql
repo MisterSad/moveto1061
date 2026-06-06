@@ -108,6 +108,11 @@ CREATE POLICY "Super admin can update any profile" ON public.profiles FOR UPDATE
 CREATE OR REPLACE FUNCTION protect_profile_roles()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- If the change is made by a database administrator (like the postgres dashboard or service_role), allow it
+  IF CURRENT_USER IN ('postgres', 'service_role') THEN
+    RETURN NEW;
+  END IF;
+
   -- If the user making the change is a super admin, allow anything
   IF EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'super' OR is_admin = true)) THEN
     RETURN NEW;
