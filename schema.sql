@@ -276,6 +276,7 @@ BEGIN
     user_id,
     identity_data,
     provider,
+    provider_id,
     last_sign_in_at,
     created_at,
     updated_at
@@ -284,6 +285,7 @@ BEGIN
     new_user_id,
     jsonb_build_object('sub', new_user_id, 'email', lower(p_username) || '@r4r5.local', 'email_verified', true),
     'email',
+    new_user_id::text,
     now(),
     now(),
     now()
