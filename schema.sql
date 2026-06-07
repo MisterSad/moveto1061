@@ -188,7 +188,7 @@ CREATE POLICY "Super and R5 can update settings" ON public.guild_settings FOR UP
 -- ============================================================
 
 -- Enable pgcrypto for password hashing
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA extensions;
 
 -- Function to safely create an R4/R5 user account from the frontend admin panel
 CREATE OR REPLACE FUNCTION public.create_officer_account(
@@ -198,7 +198,7 @@ CREATE OR REPLACE FUNCTION public.create_officer_account(
 )
 RETURNS uuid
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   new_user_id uuid;
@@ -233,7 +233,7 @@ BEGIN
   END IF;
 
   new_user_id := gen_random_uuid();
-  encrypted_pw := crypt(p_password, gen_salt('bf'));
+  encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf'));
 
   -- 4. Insert into auth.users
   INSERT INTO auth.users (
