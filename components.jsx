@@ -152,8 +152,10 @@ function TopBar({ route, setRoute, role, isAdmin, isPrince, lang, setLang, t, on
         {role !== "visitor" && (
           <button className="topbar__user" onClick={() => {
             if (role === "player") setRoute("player");
-            else if (role === "super") setRoute("super");
-            else setRoute("admin");
+            else if (role === "super") setRoute("prince");
+            else if (role.startsWith("rad")) setRoute("admin/rad");
+            else if (role.startsWith("mtlh")) setRoute("admin/mtlh");
+            else setRoute("landing");
           }}>
             <Avatar name={selfName} />
             <span style={{ fontSize: 13 }}>{selfName}</span>

@@ -138,6 +138,12 @@ function GuildPresentation({ guild, t, lang, setRoute, role, settings }) {
 // LOGIN 
 // ============================================================
 function LoginScreen({ t, lang, session, setRoute }) {
+  const [activeTab, setActiveTab] = _useState("candidate"); // "candidate" or "officer"
+  const [username, setUsername] = _useState("");
+  const [password, setPassword] = _useState("");
+  const [loading, setLoading] = _useState(false);
+  const [error, setError] = _useState("");
+
   if (session) {
     setRoute("profile");
     return null;
@@ -150,9 +156,33 @@ function LoginScreen({ t, lang, session, setRoute }) {
     });
   }
 
+  async function handleOfficerLogin(e) {
+    e.preventDefault();
+    if (!username || !password) {
+      setError(lang === "fr" ? "Veuillez remplir tous les champs." : "Please fill in all fields.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    const email = username.includes("@") ? username.trim() : `${username.trim().toLowerCase()}@r4r5.local`;
+
+    const { data, error: loginError } = await window.supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+    if (loginError) {
+      setError(loginError.message);
+      setLoading(false);
+    } else {
+      setRoute("profile");
+    }
+  }
+
   return (
     <main className="center-stage">
-      <div className="auth-card card">
+      <div className="auth-card card" style={{ maxWidth: 420, width: "100%" }}>
         <div className="text-center">
           <div className="glyph-big">●</div>
           <div className="eyebrow">{t("login_title")}</div>
@@ -162,11 +192,100 @@ function LoginScreen({ t, lang, session, setRoute }) {
           <p className="subtle" style={{ marginTop: 12 }}>{t("login_lead")}</p>
         </div>
 
-        <button className="btn btn--discord" style={{ width: "100%", marginTop: 24, justifyContent: "center" }}
-          onClick={signIn}>
-          <svg width="20" height="15" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.6 58.6 0 0 0 45.4.5l-.6 1.4a54 54 0 0 0-12.9 0L31.3.5c-5 .8-10 2.3-14.6 4.4C7.5 18.8 5 32.3 6.3 45.6a59 59 0 0 0 17.7 8.9l1.5-2c-2.4-.9-4.7-2-7-3.4l1.7-1.4a42 42 0 0 0 35.7 0l1.7 1.4c-2.2 1.3-4.5 2.5-7 3.4l1.5 2a59 59 0 0 0 17.7-8.9c1.4-15.3-2.4-28.6-9.7-40.7Zm-35.7 33c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.5 3.2 6.4 7.1 0 4-2.9 7.2-6.4 7.2Zm22.2 0c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.4 3.2 6.4 7.1 0 4-2.8 7.2-6.4 7.2Z"/></svg>
-          {t("login_cta")}
-        </button>
+        {/* Tab Selector */}
+        <div style={{ display: "flex", borderBottom: "1px solid var(--line-soft)", marginTop: 24, marginBottom: 20 }}>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab("candidate"); setError(""); }}
+            style={{
+              flex: 1,
+              padding: "10px",
+              background: "none",
+              border: "none",
+              borderBottom: activeTab === "candidate" ? "2px solid var(--gold)" : "2px solid transparent",
+              color: activeTab === "candidate" ? "var(--gold)" : "var(--ink-mute)",
+              fontFamily: "var(--f-display)",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            {lang === "fr" ? "Candidat (Discord)" : "Candidate (Discord)"}
+          </button>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab("officer"); setError(""); }}
+            style={{
+              flex: 1,
+              padding: "10px",
+              background: "none",
+              border: "none",
+              borderBottom: activeTab === "officer" ? "2px solid var(--gold)" : "2px solid transparent",
+              color: activeTab === "officer" ? "var(--gold)" : "var(--ink-mute)",
+              fontFamily: "var(--f-display)",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            {lang === "fr" ? "Officier (R4/R5)" : "Officer (R4/R5)"}
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ 
+            color: "var(--bad)", 
+            fontSize: 13, 
+            marginBottom: 16, 
+            textAlign: "center", 
+            background: "rgba(239, 68, 68, 0.1)", 
+            padding: "10px", 
+            borderRadius: 6,
+            border: "1px solid rgba(239, 68, 68, 0.2)"
+          }}>
+            {error}
+          </div>
+        )}
+
+        {activeTab === "candidate" ? (
+          <button className="btn btn--discord" style={{ width: "100%", justifyContent: "center" }} onClick={signIn}>
+            <svg width="20" height="15" viewBox="0 0 71 55" fill="currentColor"><path d="M60.1 4.9A58.6 58.6 0 0 0 45.4.5l-.6 1.4a54 54 0 0 0-12.9 0L31.3.5c-5 .8-10 2.3-14.6 4.4C7.5 18.8 5 32.3 6.3 45.6a59 59 0 0 0 17.7 8.9l1.5-2c-2.4-.9-4.7-2-7-3.4l1.7-1.4a42 42 0 0 0 35.7 0l1.7 1.4c-2.2 1.3-4.5 2.5-7 3.4l1.5 2a59 59 0 0 0 17.7-8.9c1.4-15.3-2.4-28.6-9.7-40.7Zm-35.7 33c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.5 3.2 6.4 7.1 0 4-2.9 7.2-6.4 7.2Zm22.2 0c-3.5 0-6.4-3.2-6.4-7.2 0-3.9 2.8-7.1 6.4-7.1 3.6 0 6.4 3.2 6.4 7.1 0 4-2.8 7.2-6.4 7.2Z"/></svg>
+            {t("login_cta")}
+          </button>
+        ) : (
+          <form onSubmit={handleOfficerLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <Field label={lang === "fr" ? "Identifiant (ID)" : "Identifier (ID)"} required>
+              <input 
+                type="text" 
+                className="input mono" 
+                placeholder={lang === "fr" ? "ex. Spart" : "e.g. Spart"}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+              />
+            </Field>
+            
+            <Field label={lang === "fr" ? "Mot de passe" : "Password"} required>
+              <input 
+                type="password" 
+                className="input mono" 
+                placeholder="••••••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+            </Field>
+
+            <button 
+              type="submit" 
+              className="btn btn--primary" 
+              style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
+              disabled={loading}
+            >
+              {loading ? "..." : (lang === "fr" ? "Se connecter" : "Log In")}
+            </button>
+          </form>
+        )}
       </div>
     </main>
   );

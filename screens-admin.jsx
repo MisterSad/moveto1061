@@ -417,10 +417,62 @@ function PrinceDashboardScreen({ t, lang }) {
 // ============================================================
 // SYSTEM ADMIN DASHBOARD
 // ============================================================
-function SystemAdminScreen({ t, lang }) {
+function SystemAdminScreen({ t, lang, profile }) {
   const [team, setTeam] = _ps([]);
   const [search, setSearch] = _ps("");
   const [showAllUsers, setShowAllUsers] = _ps(false);
+
+  const [newUsername, setNewUsername] = _ps("");
+  const [newRole, setNewRole] = _ps("rad_r4");
+  const [generatedPassword, setGeneratedPassword] = _ps("");
+  const [createdUsername, setCreatedUsername] = _ps("");
+  const [isCreating, setIsCreating] = _ps(false);
+  const [createError, setCreateError] = _ps("");
+  const [createSuccess, setCreateSuccess] = _ps(false);
+
+  const generateSecurePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*?";
+    const array = new Uint32Array(16);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, num => chars[num % chars.length]).join("");
+  };
+
+  async function handleCreateAccount() {
+    if (!newUsername || newUsername.trim().length < 3) {
+      setCreateError(lang === "fr" ? "L'identifiant doit contenir au moins 3 caractères." : "Username must be at least 3 characters.");
+      return;
+    }
+    setCreateError("");
+    setCreateSuccess(false);
+    setIsCreating(true);
+
+    const pwd = generateSecurePassword();
+    const cleanUsername = newUsername.trim();
+
+    const { data, error } = await window.supabaseClient.rpc('create_officer_account', {
+      p_username: cleanUsername,
+      p_password: pwd,
+      p_role: newRole
+    });
+
+    if (error) {
+      let errMsg = error.message;
+      if (error.message.includes("function") || error.message.includes("does not exist") || error.code === "42883") {
+        errMsg = lang === "fr" 
+          ? "La fonction SQL de création de compte n'est pas installée dans Supabase. Veuillez exécuter le script SQL fourni dans schema.sql dans l'éditeur SQL Supabase." 
+          : "The SQL function for account creation is not installed in Supabase. Please execute the SQL script from schema.sql in your Supabase SQL Editor.";
+      }
+      setCreateError(errMsg);
+      setIsCreating(false);
+    } else {
+      setCreatedUsername(cleanUsername);
+      setGeneratedPassword(pwd);
+      setCreateSuccess(true);
+      setNewUsername("");
+      setIsCreating(false);
+      fetchTeam();
+    }
+  }
 
   function fetchTeam() {
     window.supabaseClient.from('profiles').select('*').then(({ data }) => {
@@ -451,11 +503,103 @@ function SystemAdminScreen({ t, lang }) {
     return [...res].sort((a, b) => (a.ign || "").localeCompare(b.ign || ""));
   }, [team, search, showAllUsers]);
 
+  const isHawkTuah = profile?.ign?.toLowerCase() === 'hawktuah';
+
   return (
     <main className="container container--wide">
       <div className="eyebrow">System Admin</div>
       <h1 className="display" style={{ fontSize: 44, marginTop: 8 }}>Team management</h1>
       <div className="hairline hairline--gold"></div>
+      
+      {isHawkTuah && (
+        <div className="card" style={{ marginBottom: 32, borderLeft: "4px solid var(--gold)" }}>
+          <div className="card__head" style={{ marginBottom: 20 }}>
+            <div className="card__title">
+              {lang === "fr" ? "Créer un compte Officier R4/R5 (Sécurisé)" : "Create R4/R5 Officer Account (Secure)"}
+            </div>
+          </div>
+
+          {createError && (
+            <div className="status-large rejected" style={{ marginBottom: 20, padding: 16, display: "flex", gap: 12 }}>
+              <span style={{ fontSize: 20 }}>⚠️</span>
+              <div style={{ color: "var(--bad)" }}>{createError}</div>
+            </div>
+          )}
+
+          {createSuccess && (
+            <div className="status-large accepted" style={{ marginBottom: 20, padding: 20, display: "block" }}>
+              <div style={{ fontWeight: "bold", fontSize: 16, color: "var(--ok)", marginBottom: 8 }}>
+                {lang === "fr" ? "Compte créé avec succès !" : "Account created successfully!"}
+              </div>
+              <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "var(--ink-dim)" }}>
+                {lang === "fr" 
+                  ? "Transmettez ces identifiants à l'officier pour qu'il se connecte dans l'onglet 'Officier'."
+                  : "Give these credentials to the officer so they can log in via the 'Officer' tab."}
+              </p>
+              <div className="grid-resp-2" style={{ gap: 12, background: "var(--bg-1)", padding: 12, borderRadius: 6, border: "1px solid var(--line-soft)" }}>
+                <div>
+                  <span className="kv__k">ID / Username</span>
+                  <div className="mono" style={{ fontSize: 16, marginTop: 4, fontWeight: "bold", color: "var(--ink)" }}>{createdUsername}</div>
+                </div>
+                <div>
+                  <span className="kv__k">Password</span>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                    <span className="mono" style={{ fontSize: 16, fontWeight: "bold", color: "var(--gold)", wordBreak: "break-all" }}>{generatedPassword}</span>
+                    <button className="btn btn--ghost btn--sm" style={{ padding: "2px 8px", fontSize: 11 }} onClick={() => {
+                      navigator.clipboard.writeText(generatedPassword);
+                      alert(lang === "fr" ? "Mot de passe copié !" : "Password copied!");
+                    }}>
+                      {lang === "fr" ? "Copier" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="field-hint" style={{ color: "var(--warn)", marginTop: 8, fontWeight: "500" }}>
+                ⚠️ {lang === "fr" 
+                  ? "Ce mot de passe ne sera plus jamais affiché. Notez-le bien." 
+                  : "This password will never be displayed again. Make sure to save it."}
+              </div>
+            </div>
+          )}
+
+          <div className="grid-resp-3" style={{ gap: 16, alignItems: "end" }}>
+            <Field label={lang === "fr" ? "Identifiant (ID/Pseudo)" : "Identifier (ID/Username)"} required>
+              <input 
+                type="text" 
+                className="input mono" 
+                placeholder="ex. Spart" 
+                value={newUsername} 
+                onChange={(e) => setNewUsername(e.target.value.replace(/\s+/g, ''))} // prevent spaces
+                disabled={isCreating}
+              />
+            </Field>
+
+            <Field label={lang === "fr" ? "Rôle" : "Role"} required>
+              <select 
+                className="select" 
+                value={newRole} 
+                onChange={(e) => setNewRole(e.target.value)}
+                disabled={isCreating}
+                style={{ width: "100%" }}
+              >
+                <option value="rad_r4">RAD R4</option>
+                <option value="rad_r5">RAD R5</option>
+                <option value="mtlh_r4">MTLH R4</option>
+                <option value="mtlh_r5">MTLH R5</option>
+              </select>
+            </Field>
+
+            <button 
+              className="btn btn--primary" 
+              style={{ height: 42, width: "100%", justifyContent: "center" }}
+              onClick={handleCreateAccount}
+              disabled={isCreating}
+            >
+              {isCreating ? "..." : (lang === "fr" ? "Créer le compte" : "Create Account")}
+            </button>
+          </div>
+        </div>
+      )}
       
       <p className="subtle" style={{ marginBottom: 24, marginTop: 24 }}>Update roles of existing members. (Note: Only members who logged in at least once appear here)</p>
       

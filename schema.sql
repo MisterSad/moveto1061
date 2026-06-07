@@ -182,3 +182,106 @@ CREATE POLICY "Super and R5 can update settings" ON public.guild_settings FOR UP
   (id = 'rad' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'rad_r5')) OR
   (id = 'mtlh' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'mtlh_r5'))
 );
+
+-- ============================================================
+-- SECURE OFFICER ACCOUNT CREATION
+-- ============================================================
+
+-- Enable pgcrypto for password hashing
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Function to safely create an R4/R5 user account from the frontend admin panel
+CREATE OR REPLACE FUNCTION public.create_officer_account(
+  p_username text,
+  p_password text,
+  p_role text
+)
+RETURNS uuid
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  new_user_id uuid;
+  encrypted_pw text;
+BEGIN
+  -- 1. Check if caller is admin (HawkTuah has is_admin = true or role = 'super')
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() 
+    AND (role = 'super' OR is_admin = true)
+  ) THEN
+    RAISE EXCEPTION 'Non autorisé : Seul un administrateur peut créer des comptes officiers.';
+  END IF;
+
+  -- 2. Validation
+  IF p_username IS NULL OR length(trim(p_username)) < 3 THEN
+    RAISE EXCEPTION 'L''identifiant doit contenir au moins 3 caractères.';
+  END IF;
+  IF p_password IS NULL OR length(p_password) < 8 THEN
+    RAISE EXCEPTION 'Le mot de passe doit contenir au moins 8 caractères.';
+  END IF;
+  IF p_role NOT IN ('rad_r4', 'rad_r5', 'mtlh_r4', 'mtlh_r5') THEN
+    RAISE EXCEPTION 'Rôle d''officier invalide.';
+  END IF;
+
+  -- 3. Check duplicate
+  IF EXISTS (
+    SELECT 1 FROM auth.users 
+    WHERE email = lower(p_username) || '@r4r5.local'
+  ) THEN
+    RAISE EXCEPTION 'Cet identifiant est déjà utilisé par un autre utilisateur.';
+  END IF;
+
+  new_user_id := gen_random_uuid();
+  encrypted_pw := crypt(p_password, gen_salt('bf'));
+
+  -- 4. Insert into auth.users
+  INSERT INTO auth.users (
+    id,
+    instance_id,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    role,
+    aud
+  ) VALUES (
+    new_user_id,
+    '00000000-0000-0000-0000-000000000000',
+    lower(p_username) || '@r4r5.local',
+    encrypted_pw,
+    now(),
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    '{}'::jsonb,
+    now(),
+    now(),
+    'authenticated',
+    'authenticated'
+  );
+
+  -- 5. Insert into public.profiles
+  INSERT INTO public.profiles (
+    id,
+    ign,
+    role,
+    discord_tag,
+    is_admin,
+    is_recruiter,
+    is_prince
+  ) VALUES (
+    new_user_id,
+    p_username,
+    p_role,
+    p_username,
+    FALSE,
+    TRUE,
+    FALSE
+  );
+
+  RETURN new_user_id;
+END;
+$$ LANGUAGE plpgsql;
+

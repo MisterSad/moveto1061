@@ -122,7 +122,7 @@ function App() {
       <Route path="/admin/rad" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="rad" />} />
       <Route path="/admin/mtlh" element={<AdminDashboard t={t} lang={lang} role={role} profile={profile} currentUserId={session?.user?.id} forceGuild="mtlh" />} />
       <Route path="/prince" element={<PrinceDashboardScreen t={t} lang={lang} />} />
-      <Route path="/system" element={<SystemAdminScreen t={t} lang={lang} />} />
+      <Route path="/system" element={<SystemAdminScreen t={t} lang={lang} profile={profile} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
