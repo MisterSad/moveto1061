@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient (Deep Space/Steel) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#191613" />
+      <stop offset="50%" stop-color="#110E0A" />
+      <stop offset="100%" stop-color="#080705" />
+    </linearGradient>
+
+    <!-- Metallic Gold Gradient (RAD / The Radiant) -->
+    <linearGradient id="goldGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8a6f27" />
+      <stop offset="30%" stop-color="#cda64f" />
+      <stop offset="50%" stop-color="#fdf0cd" />
+      <stop offset="70%" stop-color="#d9b156" />
+      <stop offset="100%" stop-color="#a4802e" />
+    </linearGradient>
+
+    <!-- Metallic Dark Steel Gradient (MTLH / Metalheads) -->
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Outer Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Background (App Icon Mask style for iOS) -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)" />
+  
+  <!-- Outer Subtle Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.2" />
+  
+  <!-- Glowing Dashed Ring (Represents server gates / migration portal) -->
+  <circle cx="256" cy="256" r="170" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-dasharray="80 186" stroke-linecap="round" filter="url(#glow)" opacity="0.8" />
+
+  <!-- Shield Outline (MTLH - discipline, raw armor) -->
+  <path d="M156 150 H356 C356 150 400 300 256 410 C112 300 156 150 156 150 Z" fill="url(#steelGrad)" stroke="url(#goldGrad)" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- Inner Radiant Star (RAD - coordination, blinding light) -->
+  <g transform="translate(256, 250)">
+    <!-- 8-Point Starburst -->
+    <path d="M0 -75 L16 -20 L71 -20 L27 12 L44 67 L0 30 L-44 67 L-27 12 L-71 -20 L-16 -20 Z" fill="url(#goldGrad)" />
+    <!-- Secondary smaller star points for radiancy -->
+    <path d="M0 -45 L8 -12 L41 -12 L16 8 L26 41 L0 18 L-26 41 L-16 8 L-41 -12 L-8 -12 Z" fill="#ffffff" opacity="0.5" transform="rotate(45)" />
+    <!-- Core Golden Pearl -->
+    <circle cx="0" cy="0" r="14" fill="#ffffff" filter="url(#glow)" />
+    <circle cx="0" cy="0" r="10" fill="url(#goldGrad)" />
+  </g>
+
+  <!-- Stylized Monogram/Server number at bottom -->
+  <text x="256" y="452" font-family="'Inter', -apple-system, sans-serif" font-weight="900" font-size="28" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="0.3em" opacity="0.9">1061</text>
+</svg>
