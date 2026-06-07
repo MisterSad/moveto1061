@@ -457,7 +457,7 @@ function SystemAdminScreen({ t, lang, profile }) {
 
     if (error) {
       let errMsg = error.message;
-      if (error.message.includes("function") || error.message.includes("does not exist") || error.code === "42883") {
+      if (error.code === "42883") {
         errMsg = lang === "fr" 
           ? "La fonction SQL de création de compte n'est pas installée dans Supabase. Veuillez exécuter le script SQL fourni dans schema.sql dans l'éditeur SQL Supabase." 
           : "The SQL function for account creation is not installed in Supabase. Please execute the SQL script from schema.sql in your Supabase SQL Editor.";
