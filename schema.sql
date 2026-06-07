@@ -247,7 +247,11 @@ BEGIN
     created_at,
     updated_at,
     role,
-    aud
+    aud,
+    confirmation_token,
+    email_change,
+    email_change_token_new,
+    recovery_token
   ) VALUES (
     new_user_id,
     '00000000-0000-0000-0000-000000000000',
@@ -259,7 +263,30 @@ BEGIN
     now(),
     now(),
     'authenticated',
-    'authenticated'
+    'authenticated',
+    '',
+    '',
+    '',
+    ''
+  );
+
+  -- 4.5. Insert into auth.identities
+  INSERT INTO auth.identities (
+    id,
+    user_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    new_user_id,
+    new_user_id,
+    jsonb_build_object('sub', new_user_id, 'email', lower(p_username) || '@r4r5.local', 'email_verified', true),
+    'email',
+    now(),
+    now(),
+    now()
   );
 
   -- 5. Insert into public.profiles
