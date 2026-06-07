@@ -456,6 +456,7 @@ function SystemAdminScreen({ t, lang, profile }) {
     });
 
     if (error) {
+      console.error("RPC Error:", error);
       let errMsg = error.message;
       if (error.code === "42883") {
         errMsg = lang === "fr" 
